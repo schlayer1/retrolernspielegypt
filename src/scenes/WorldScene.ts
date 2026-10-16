@@ -681,11 +681,19 @@ export class WorldScene extends Phaser.Scene {
   private hintFor(n: Node): string {
     switch (n.kind) {
       case 'egypt_senbi':
-        return 'Drücke E: Mit Fischer Senbi sprechen';
+        return 'Drücke E: Mit Fischer Senbi sprechen (Kap. 1)';
       case 'egypt_ameni':
         return 'Drücke E: Mit Feldhüter Ameni sprechen (Kap. 2)';
       case 'egypt_kheti':
         return 'Drücke E: Mit Bäuerin Kheti sprechen';
+      case 'egypt_nefermaat':
+        return 'Drücke E: Mit Wesir Nefermaat sprechen (Kap. 3)';
+      case 'egypt_ani':
+        return 'Drücke E: Mit Ober-Schreiber Ani sprechen (Kap. 4)';
+      case 'egypt_hemiunu':
+        return 'Drücke E: Mit Baumeister Hemiunu sprechen (Kap. 5)';
+      case 'egypt_baki':
+        return 'Drücke E: Mit Hafenmeister Baki sprechen (Kap. 6)';
       case 'egypt_nilometer':
         return 'Drücke E: Wasserstand am Nilometer ablesen';
       case 'egypt_palm':
@@ -721,6 +729,22 @@ export class WorldScene extends Phaser.Scene {
 
       case 'egypt_kheti':
         this.interactKheti();
+        break;
+
+      case 'egypt_nefermaat':
+        this.interactNefermaat();
+        break;
+
+      case 'egypt_ani':
+        this.interactAni();
+        break;
+
+      case 'egypt_hemiunu':
+        this.interactHemiunu();
+        break;
+
+      case 'egypt_baki':
+        this.interactBaki();
         break;
 
       case 'egypt_nilometer':
@@ -931,17 +955,30 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
 
-    if (q === 8 && state.count('emmer') >= 1) {
-      // Bereit für das Jahreszeiten-Quiz
+    if (q === 8 || state.isReadyForQuiz()) {
       state.openDialog({
         speaker: 'Feldhüter Ameni – Wissensprüfung',
         nodes: ch.quiz as any,
         onDone: () => {
-          state.quest = ch.quests.length - 1;
+          state.quest = ch.quests.length;
           state.unlockLexicon('schaduf');
           state.unlockLexicon('emmer');
+          state.unlockLexicon('nilschwemme');
           state.persist();
-          state.emit('chapterDone', state.chapter);
+          state.emit('chapterDone', 2);
+
+          state.openDialog({
+            speaker: 'Feldhüter Ameni – Kapitel 2 gemeistert!',
+            nodes: [
+              { text: '🎉 <strong>Ausgezeichnet!</strong> Du verstehst die Geheimnisse der Nilschwemme und die Hebelkraft des Schadufs.' },
+              { text: 'Die Dörfer wachsen zu Städten heran. Nun ruft dich der königliche Hof: <strong>Wesir Nefermaat</strong> benötigt sonnengetrocknete Lehmziegel und Kornspeicher für die Vorräte des Reiches!' },
+              { text: 'Bist du bereit für <strong>Kapitel 3: Der Pharao, sein Wesir & der Kornspeicher</strong>? Weiter geht\'s!' },
+            ],
+            onDone: () => {
+              state.startChapter(3);
+              state.emit('toast', 'Kapitel 3 hat begonnen! Begib dich zu Wesir Nefermaat.');
+            },
+          });
         },
       });
       return;
@@ -997,12 +1034,26 @@ export class WorldScene extends Phaser.Scene {
         speaker: 'Fischer Senbi – Wissensprüfung',
         nodes: ch.quiz as any,
         onDone: () => {
-          state.quest = ch.quests.length - 1;
+          state.quest = ch.quests.length;
           state.unlockLexicon('kemet');
           state.unlockLexicon('deschret');
           state.unlockLexicon('nil');
           state.persist();
-          state.emit('chapterDone', state.chapter);
+          state.emit('chapterDone', 1);
+
+          // Feierlicher Übergangsdialog zu Kapitel 2
+          state.openDialog({
+            speaker: 'Fischer Senbi – Kapitel 1 gemeistert!',
+            nodes: [
+              { text: '🎉 <strong>Ausgezeichnet!</strong> Du hast die Wissensprüfung von Kapitel 1 mit Bravour bestanden!' },
+              { text: 'Aus einfachen Schilffischern werden nun sesshafte Bauern: Weiter nördlich wartet <strong>Feldhüter Ameni</strong> auf dich. Er zeigt dir das Geheimnis der künstlichen Bewässerung mit dem <strong>Schaduf</strong>!' },
+              { text: 'Bist du bereit für <strong>Kapitel 2: Die Nilschwemme & das Wunder des Schadufs</strong>? Auf geht\'s zum nächsten Zeitalter!' },
+            ],
+            onDone: () => {
+              state.startChapter(2);
+              state.emit('toast', 'Kapitel 2 hat begonnen! Begib dich nach Norden zu Feldhüter Ameni.');
+            },
+          });
         },
       });
       return;
@@ -1025,6 +1076,339 @@ export class WorldScene extends Phaser.Scene {
     const curHint = ch.hints[q] || ch.quests[q] || 'Erfülle deine aktuelle Aufgabe!';
     state.openDialog({
       speaker: 'Fischer Senbi',
+      nodes: [
+        { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
+        { text: `Tipp:\n${curHint}` },
+      ],
+    });
+  }
+
+  private interactNefermaat(): void {
+    const ch = state.chapters[3];
+    const q = state.quest;
+
+    if (state.chapter < 3) {
+      state.openDialog({
+        speaker: 'Wesir Nefermaat',
+        nodes: [{ text: 'Der Hof des Gottkönigs empfängt nur erfahrene Baumeister. Meistere erst Feldhüter Amenis Aufgaben in Kapitel 2!' }],
+      });
+      return;
+    }
+
+    if (state.chapter > 3) {
+      state.openDialog({
+        speaker: 'Wesir Nefermaat',
+        nodes: [{ text: 'Die königlichen Speicher sind gefüllt mit Emmer und Bier. Dein Dienst für die Staatsverwaltung bleibt unvergessen!' }],
+      });
+      return;
+    }
+
+    if (q === 0) {
+      state.openDialog({
+        speaker: 'Wesir Nefermaat',
+        nodes: [
+          { text: 'Sei gegrüßt im Namen des Pharao! Ein Staat entsteht nicht von allein: Tausende Menschen müssen ernährt, Deiche gepflegt und Vorräte gelagert werden.' },
+          { text: 'Als oberster Wesir organisiere ich die Arbeit. Wir brauchen sonnengetrocknete Lehmziegel für Kornspeicher und frisches Brot für unsere Arbeiter!' },
+          { text: 'Errichte zuerst die königliche Lehmziegelei am Wüstenrand (drücke E am Bauplatz).' },
+        ],
+        onDone: () => {
+          state.quest = 1;
+          state.persist();
+        },
+      });
+      return;
+    }
+
+    if (q === 6 || state.isReadyForQuiz()) {
+      state.openDialog({
+        speaker: 'Wesir Nefermaat – Wissensprüfung',
+        nodes: ch.quiz as any,
+        onDone: () => {
+          state.quest = ch.quests.length;
+          state.unlockLexicon('pharao');
+          state.unlockLexicon('wesir');
+          state.unlockLexicon('hochkultur');
+          state.persist();
+          state.emit('chapterDone', 3);
+
+          state.openDialog({
+            speaker: 'Wesir Nefermaat – Kapitel 3 gemeistert!',
+            nodes: [
+              { text: '🎉 <strong>Ausgezeichnete Staatsarbeit!</strong> Die Vorratsverwaltung und der Städtebau stehen auf sicherem Fundament.' },
+              { text: 'Doch ein Reich ohne Schrift kann keine Steuern und Gesetze festhalten! Im Haus des Lebens wartet <strong>Ober-Schreiber Ani</strong> auf dich.' },
+              { text: 'Bist du bereit für <strong>Kapitel 4: Das Haus der Schreiber & das Pantheon der Götter</strong>? Lass uns aufbrechen!' },
+            ],
+            onDone: () => {
+              state.startChapter(4);
+              state.emit('toast', 'Kapitel 4 hat begonnen! Begib dich zu Ober-Schreiber Ani.');
+            },
+          });
+        },
+      });
+      return;
+    }
+
+    if (state.isChapterComplete()) {
+      state.openDialog({
+        speaker: 'Wesir Nefermaat',
+        nodes: [{ text: 'Bist du bereit für Kapitel 4: Das Haus der Schreiber & die Götter? Weiter geht\'s!' }],
+        onDone: () => state.startChapter(4),
+      });
+      return;
+    }
+
+    const curHint = ch.hints[q] || ch.quests[q] || 'Erfülle deine Aufgaben für den Wesir!';
+    state.openDialog({
+      speaker: 'Wesir Nefermaat',
+      nodes: [
+        { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
+        { text: `Tipp:\n${curHint}` },
+      ],
+    });
+  }
+
+  private interactAni(): void {
+    const ch = state.chapters[4];
+    const q = state.quest;
+
+    if (state.chapter < 4) {
+      state.openDialog({
+        speaker: 'Ober-Schreiber Ani',
+        nodes: [{ text: 'Die heiligen Zeichen (Medu Netjer) erfordern Disziplin und Weisheit. Meistere erst Wesir Nefermaats Aufgaben in Kapitel 3!' }],
+      });
+      return;
+    }
+
+    if (state.chapter > 4) {
+      state.openDialog({
+        speaker: 'Ober-Schreiber Ani',
+        nodes: [{ text: 'Deine Hieroglyphen und Totenbuch-Rollen ehren Gott Thot! Das Haus des Lebens steht dir immer offen.' }],
+      });
+      return;
+    }
+
+    if (q === 0) {
+      state.openDialog({
+        speaker: 'Ober-Schreiber Ani',
+        nodes: [
+          { text: 'Sei willkommen im Haus des Lebens! „Wer schreibt, der bleibt“ – Schreiber sind die mächtigsten Männer Ägyptens neben dem Wesir.' },
+          { text: 'Wir zeichnen heilige Hieroglyphen, berechnen Steuern und bewahren das Totenbuch für das Gericht des Osiris.' },
+          { text: 'Errichte zuerst das Schreiberhaus (Haus des Lebens) am Bauplatz (drücke E).' },
+        ],
+        onDone: () => {
+          state.quest = 1;
+          state.persist();
+        },
+      });
+      return;
+    }
+
+    if (q === 6 || state.isReadyForQuiz()) {
+      state.openDialog({
+        speaker: 'Ober-Schreiber Ani – Wissensprüfung',
+        nodes: ch.quiz as any,
+        onDone: () => {
+          state.quest = ch.quests.length;
+          state.unlockLexicon('schreiber');
+          state.unlockLexicon('hieroglyphen');
+          state.unlockLexicon('polytheismus');
+          state.unlockLexicon('mumifizierung');
+          state.persist();
+          state.emit('chapterDone', 4);
+
+          state.openDialog({
+            speaker: 'Ober-Schreiber Ani – Kapitel 4 gemeistert!',
+            nodes: [
+              { text: '🎉 <strong>Meisterhaft!</strong> Du beherrschst die heiligen Schriftzeichen und die Geheimnisse des Jenseits.' },
+              { text: 'Nun ruft dich die größte Baustelle der Menschheitsgeschichte: Am westlichen Wüstenplateau leitet <strong>Königlicher Baumeister Hemiunu</strong> den Bau der Großen Pyramide!' },
+              { text: 'Bist du bereit für <strong>Kapitel 5: Die Baumeister von Gizeh – Pyramiden für die Ewigkeit</strong>?' },
+            ],
+            onDone: () => {
+              state.startChapter(5);
+              state.emit('toast', 'Kapitel 5 hat begonnen! Begib dich zu Baumeister Hemiunu am Wüstenhang.');
+            },
+          });
+        },
+      });
+      return;
+    }
+
+    if (state.isChapterComplete()) {
+      state.openDialog({
+        speaker: 'Ober-Schreiber Ani',
+        nodes: [{ text: 'Bist du bereit für Kapitel 5: Die Pyramiden von Gizeh? Auf geht\'s zur Baustelle!' }],
+        onDone: () => state.startChapter(5),
+      });
+      return;
+    }
+
+    const curHint = ch.hints[q] || ch.quests[q] || 'Erfülle deine Aufgaben im Haus des Lebens!';
+    state.openDialog({
+      speaker: 'Ober-Schreiber Ani',
+      nodes: [
+        { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
+        { text: `Tipp:\n${curHint}` },
+      ],
+    });
+  }
+
+  private interactHemiunu(): void {
+    const ch = state.chapters[5];
+    const q = state.quest;
+
+    if (state.chapter < 5) {
+      state.openDialog({
+        speaker: 'Baumeister Hemiunu',
+        nodes: [{ text: 'Die Großbaustelle der Ewigkeit duldet nur eingeweihte Gelehrte. Meistere erst Kapitel 4 bei Schreiber Ani!' }],
+      });
+      return;
+    }
+
+    if (state.chapter > 5) {
+      state.openDialog({
+        speaker: 'Baumeister Hemiunu',
+        nodes: [{ text: 'Die Große Pyramide und die Sphinx überdauern Jahrtausende! Ein Triumph der menschlichen Schöpferkraft.' }],
+      });
+      return;
+    }
+
+    if (q === 0) {
+      state.openDialog({
+        speaker: 'Baumeister Hemiunu',
+        nodes: [
+          { text: 'Tritt heran an den Horizont des Cheops! Ich bin Hemiunu, oberster Baumeister des Königs.' },
+          { text: 'Über 2,3 Millionen Kalksteinblöcke, jeder 2,5 Tonnen schwer, fügen wir hier empor – erbaut von freien Bauern und Steinmetzen während der Flutzeit!' },
+          { text: 'Errichte zuerst die Bauhütte und Werkstatt am Fuße des Plateaus (drücke E am Bauplatz).' },
+        ],
+        onDone: () => {
+          state.quest = 1;
+          state.persist();
+        },
+      });
+      return;
+    }
+
+    if (q === 6 || state.isReadyForQuiz()) {
+      state.openDialog({
+        speaker: 'Baumeister Hemiunu – Wissensprüfung',
+        nodes: ch.quiz as any,
+        onDone: () => {
+          state.quest = ch.quests.length;
+          state.unlockLexicon('pyramiden');
+          state.unlockLexicon('sphinx');
+          state.unlockLexicon('steinmetze');
+          state.persist();
+          state.emit('chapterDone', 5);
+
+          state.openDialog({
+            speaker: 'Baumeister Hemiunu – Kapitel 5 gemeistert!',
+            nodes: [
+              { text: '🎉 <strong>Unvergänglich!</strong> Die Pyramide von Gizeh und die Große Sphinx stehen vollendet im Sonnenlicht!' },
+              { text: 'Das Reich erblüht zu ungekanntem Reichtum. Am Nilhafen bereitet <strong>Hafenmeister Baki</strong> die großen Handelsbarken für Expeditionen nach Punt und in den Libanon vor.' },
+              { text: 'Bist du bereit für das große Finale: <strong>Kapitel 6: Der Hafen des Pharao & der Schatz des Tutanchamun</strong>?' },
+            ],
+            onDone: () => {
+              state.startChapter(6);
+              state.emit('toast', 'Kapitel 6 hat begonnen! Begib dich nach Süden zum Hafen.');
+            },
+          });
+        },
+      });
+      return;
+    }
+
+    if (state.isChapterComplete()) {
+      state.openDialog({
+        speaker: 'Baumeister Hemiunu',
+        nodes: [{ text: 'Bist du bereit für Kapitel 6: Der Hafen des Pharao? Weiter geht\'s zum Nilhafen!' }],
+        onDone: () => state.startChapter(6),
+      });
+      return;
+    }
+
+    const curHint = ch.hints[q] || ch.quests[q] || 'Erfülle deine Aufgaben auf der Großbaustelle!';
+    state.openDialog({
+      speaker: 'Baumeister Hemiunu',
+      nodes: [
+        { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
+        { text: `Tipp:\n${curHint}` },
+      ],
+    });
+  }
+
+  private interactBaki(): void {
+    const ch = state.chapters[6];
+    const q = state.quest;
+
+    if (state.chapter < 6) {
+      state.openDialog({
+        speaker: 'Hafenmeister Baki',
+        nodes: [{ text: 'Die Hochsee-Expeditionen laufen erst an, wenn die großen Monumente stehen. Meistere zuerst Kapitel 5 bei Baumeister Hemiunu!' }],
+      });
+      return;
+    }
+
+    if (q === 0) {
+      state.openDialog({
+        speaker: 'Hafenmeister Baki',
+        nodes: [
+          { text: 'Willkommen am Nilhafen von Kemet! Unsere Schiffe segeln nilaufwärts nach Nubien für Gold und über das Meer nach Byblos für Zedernholz.' },
+          { text: 'Im reinen Tauschhandel sichern wir dem Reich Weihrauch, Metalle und Kunstschätze.' },
+          { text: 'Beginne damit, 3× Weihrauchharz aus Punt auf dem Basar einzutauschen (Taste H).' },
+        ],
+        onDone: () => {
+          state.quest = 1;
+          state.persist();
+        },
+      });
+      return;
+    }
+
+    if (q === 6 || state.isReadyForQuiz()) {
+      state.openDialog({
+        speaker: 'Hafenmeister Baki – Abschluss-Prüfung',
+        nodes: ch.quiz as any,
+        onDone: () => {
+          state.quest = ch.quests.length;
+          state.unlockLexicon('handelsreisen');
+          state.unlockLexicon('kleopatra');
+          state.unlockLexicon('kornkammer_roms');
+          state.unlockLexicon('stein_von_rosetta');
+          state.persist();
+          state.emit('chapterDone', 6);
+
+          state.openDialog({
+            speaker: 'Hafenmeister Baki – Vollendung der Hochkultur!',
+            nodes: [
+              { text: '🏆 <strong>Glorreich vollbracht!</strong> Du hast alle 6 Epochen des Alten Ägypten gemeistert – von den ersten Schilffischern bis zur Weltmacht am Nil!' },
+              { text: 'Dein Name wird nun für alle Zeiten in die königlichen Annalen gemeißelt.' },
+              { text: 'Hier ist deine offizielle <strong>Königliche Pharaonen-Meister-Urkunde</strong> der Heimbürgeschule Kahla!' },
+            ],
+            onDone: () => {
+              state.emit('openCertificate');
+            },
+          });
+        },
+      });
+      return;
+    }
+
+    if (state.isChapterComplete()) {
+      state.openDialog({
+        speaker: 'Hafenmeister Baki',
+        nodes: [
+          { text: 'Du hast alle sechs Zeitalter gemeistert! Schau dir jederzeit deine Meister-Urkunde an (Taste U).' },
+        ],
+        onDone: () => {
+          state.emit('openCertificate');
+        },
+      });
+      return;
+    }
+
+    const curHint = ch.hints[q] || ch.quests[q] || 'Erfülle deine Aufgaben am Hafen!';
+    state.openDialog({
+      speaker: 'Hafenmeister Baki',
       nodes: [
         { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
         { text: `Tipp:\n${curHint}` },

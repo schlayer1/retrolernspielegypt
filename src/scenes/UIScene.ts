@@ -278,6 +278,7 @@ export class UIScene extends Phaser.Scene {
     state.on('dialog', (s: DialogSpec) => this.startDialog(s));
     state.on('toast', (msg: string) => this.toast(msg));
     state.on('openTrade', () => this.openTrade());
+    state.on('openCertificate', () => this.openCertificate());
   }
 
   private bindKeys(): void {
@@ -432,11 +433,12 @@ export class UIScene extends Phaser.Scene {
         btn.innerHTML = `${String.fromCharCode(65 + idx)}) ${escapeHtml(opt)}`;
         btn.addEventListener('click', () => {
           if (idx === node.correct) {
+            this.questionActive = false;
             sfx.quest();
             this.dlgTextEl.innerHTML = `<span style="color:#86efac;font-weight:bold;">Richtig!</span> ${highlightTerms(node.explain || '')}`;
             this.dlgOptsEl.innerHTML = '';
             this.dlgNextBtn.style.display = 'inline-block';
-            this.dlgNextBtn.textContent = 'Weiter ▶';
+            this.dlgNextBtn.textContent = this.nodeIdx === (this.spec?.nodes.length ?? 0) - 1 ? 'Abschließen ✔' : 'Weiter (E) ▶';
           } else {
             sfx.eat();
             state.quizAttempts++;
