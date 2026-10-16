@@ -7,7 +7,9 @@ import { UIScene } from './scenes/UIScene';
 export const GAME_W = 480;
 export const GAME_H = 270;
 
-new Phaser.Game({
+import { state } from './systems/GameState';
+
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
   width: GAME_W,
@@ -23,3 +25,6 @@ new Phaser.Game({
   input: { activePointers: 3 },
   scene: [BootScene, WorldScene, UIScene],
 });
+
+(window as unknown as { game: Phaser.Game; state: typeof state }).game = game;
+(window as unknown as { game: Phaser.Game; state: typeof state }).state = state;

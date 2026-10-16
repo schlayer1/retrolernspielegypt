@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { sfx } from '../audio/sound';
+import { bgm, sfx } from '../audio/sound';
 import {
   CHAPTERS,
   EPOCH_COMPARISON,
@@ -13,7 +13,7 @@ import {
   ITEMS,
   RECIPES,
   TRADES,
-  EgyptItemDef,
+  EgyptBuildingDef,
   EgyptItemId,
   EgyptRecipe,
   EgyptTradeOffer,
@@ -63,6 +63,7 @@ export class UIScene extends Phaser.Scene {
   private safetyBar!: HTMLElement;
   private knowBar!: HTMLElement;
   private clockEl!: HTMLElement;
+  private lexCountEl!: HTMLElement;
   private hintEl!: HTMLElement;
   private hotbarEl!: HTMLElement;
   private toastEl!: HTMLElement;
@@ -108,7 +109,7 @@ export class UIScene extends Phaser.Scene {
     if (!existing) document.body.appendChild(this.root);
     this.root.innerHTML = '';
 
-    this.buildDOM();
+    this.mountDOM();
     this.bindEvents();
     this.bindKeys();
     new TouchControls(this);
@@ -121,80 +122,101 @@ export class UIScene extends Phaser.Scene {
     }
   }
 
-  private buildDOM(): void {
+  private mountDOM(): void {
     this.root.innerHTML = `
-      <div class="hud" id="hud">
-        <div class="hud-top">
-          <div class="hud-pill pill-chapter" id="hud-chapter">Kapitel 1</div>
-          <div class="hud-pill pill-quest" id="hud-quest">Ziel wird geladen ...</div>
-          <div class="hud-spacer"></div>
-          <div class="hud-clock" id="hud-clock">☀️ 08:00</div>
-          <button class="retro-btn btn-square" id="btn-pause" title="Pause / Mnemotechnik">⏸️</button>
+      <div class="hud-top">
+        <div class="hud-quest-box">
+          <div class="hud-chapter-title" id="hud-title">Kapitel 1: Die Wüste weicht – Ankunft am Nil</div>
+          <div class="hud-quest-text" id="hud-quest">Ziel wird geladen ...</div>
+          <div class="hud-compass" id="hud-compass">🧭 Berechne Weg ...</div>
         </div>
-        <div class="hud-compass" id="hud-compass">🧭 Berechne Weg ...</div>
-        <div class="hud-meters">
-          <div class="meter-col">
-            <span class="meter-lbl">🍖 Nahrung</span>
-            <div class="meter-track"><div class="meter-fill fill-food" id="meter-food" style="width:85%"></div></div>
+        <div class="hud-right">
+          <div class="hud-bars-card">
+            <div class="hud-bar-row">
+              <span>🍖 Nahrung</span>
+              <div class="hud-bar-track"><div class="hud-bar-fill" id="bar-food" style="background:#e0894a;width:85%"></div></div>
+            </div>
+            <div class="hud-bar-row">
+              <span>☀️ Lebenskraft</span>
+              <div class="hud-bar-track"><div class="hud-bar-fill" id="bar-safety" style="background:#5aa6e8;width:85%"></div></div>
+            </div>
+            <div class="hud-bar-row">
+              <span>📜 Wissen</span>
+              <div class="hud-bar-track"><div class="hud-bar-fill" id="bar-know" style="background:#e8d25a;width:0%"></div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#ffe9b0;margin-top:2px;">
+              <span id="hud-lex-count">Lexikon: 0/27</span>
+              <span id="hud-clock">☀️ 08:00</span>
+            </div>
           </div>
-          <div class="meter-col">
-            <span class="meter-lbl">☀️ Lebenskraft</span>
-            <div class="meter-track"><div class="meter-fill fill-safety" id="meter-safety" style="width:85%"></div></div>
-          </div>
-          <div class="meter-col">
-            <span class="meter-lbl">📜 Wissen</span>
-            <div class="meter-track"><div class="meter-fill fill-know" id="meter-know" style="width:0%"></div></div>
+          <div class="hud-btn-row">
+            <button class="retro-btn" id="btn-toggle-bgm" title="Hintergrundmusik an/aus (M)" style="border-color:#38bdf8;"><span>🎵 Musik</span></button>
+            <button class="retro-btn" data-act="pause" style="border-color:#fbbf24;"><span class="key-badge">P</span> ⏸ Pause</button>
+            <button class="retro-btn" data-act="bag" style="border-color:#ffd86b;"><span class="key-badge">I</span> 🎒 Beutel</button>
+            <button class="retro-btn" data-act="craft"><span class="key-badge">C</span> Handwerk</button>
+            <button class="retro-btn" data-act="trade"><span class="key-badge">H</span> Handel</button>
+            <button class="retro-btn" data-act="lexicon"><span class="key-badge">L</span> Lexikon</button>
+            <button class="retro-btn" data-act="timeline"><span class="key-badge">Z</span> Zeitstrahl</button>
+            <button class="retro-btn" data-act="cert"><span class="key-badge">U</span> Urkunde</button>
           </div>
         </div>
       </div>
 
-      <div class="interaction-hint" id="interaction-hint"></div>
-      <div class="hotbar" id="hotbar"></div>
-      <div class="toast" id="toast"></div>
+      <div class="hud-toast" id="hud-toast"></div>
 
-      <div class="dialog-layer" id="dialog-layer" style="display:none">
-        <div class="dialog-box">
-          <div class="dialog-header">
-            <span class="dialog-speaker" id="dlg-speaker">Mentor</span>
-            <button class="retro-btn btn-tts" id="dlg-tts" title="Text laut vorlesen">🔊 Vorlesen</button>
-          </div>
-          <div class="dialog-text" id="dlg-text"></div>
-          <div class="dialog-options" id="dlg-opts"></div>
-          <div class="dialog-footer">
-            <button class="retro-btn" id="dlg-next">Weiter ▶</button>
+      <div class="hud-bottom">
+        <div class="hud-hint-pill" id="hud-hint" style="display:none"></div>
+        <div class="hud-bottom-row">
+          <div class="hud-hotbar" id="hud-hotbar"></div>
+          <button class="hotbar-bag-btn" id="hud-bag-btn" data-act="bag">
+            <span>🎒 Beutel</span>
+            <span class="key-badge" style="background:#e8c170;color:#1a1208;font-size:10px;padding:1px 4px;">I</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="dialog-dock" id="dlg-dock" style="display:none">
+        <div class="dialog-speaker-row">
+          <span class="dialog-speaker" id="dlg-speaker">Mentor</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="retro-btn" id="dlg-speak-btn" style="padding:3px 8px;font-size:12px;">🔊 Vorlesen</button>
+            <button class="retro-btn" id="dlg-next-btn" style="padding:3px 10px;font-size:12px;">Weiter (E) ▶</button>
           </div>
         </div>
+        <div class="dialog-text" id="dlg-text"></div>
+        <div class="dialog-options" id="dlg-opts"></div>
       </div>
 
       <div class="modal-backdrop" id="modal-backdrop" style="display:none">
         <div class="modal-card" id="modal-card">
           <div class="modal-header">
             <h2 class="modal-title" id="modal-title">Menü</h2>
-            <button class="retro-btn btn-square" id="modal-close">✕</button>
+            <button class="retro-btn no-print" id="modal-close-btn">✕ Schließen (Esc)</button>
           </div>
           <div class="modal-body" id="modal-body"></div>
-          <div class="modal-footer" id="modal-footer"></div>
+          <div class="modal-footer no-print" id="modal-footer"></div>
         </div>
       </div>
     `;
 
-    this.titleEl = this.root.querySelector('#hud-chapter')!;
+    this.titleEl = this.root.querySelector('#hud-title')!;
     this.questEl = this.root.querySelector('#hud-quest')!;
     this.compassEl = this.root.querySelector('#hud-compass')!;
-    this.foodBar = this.root.querySelector('#meter-food')!;
-    this.safetyBar = this.root.querySelector('#meter-safety')!;
-    this.knowBar = this.root.querySelector('#meter-know')!;
+    this.foodBar = this.root.querySelector('#bar-food')!;
+    this.safetyBar = this.root.querySelector('#bar-safety')!;
+    this.knowBar = this.root.querySelector('#bar-know')!;
     this.clockEl = this.root.querySelector('#hud-clock')!;
-    this.hintEl = this.root.querySelector('#interaction-hint')!;
-    this.hotbarEl = this.root.querySelector('#hotbar')!;
-    this.toastEl = this.root.querySelector('#toast')!;
+    this.lexCountEl = this.root.querySelector('#hud-lex-count')!;
+    this.hintEl = this.root.querySelector('#hud-hint')!;
+    this.hotbarEl = this.root.querySelector('#hud-hotbar')!;
+    this.toastEl = this.root.querySelector('#hud-toast')!;
 
-    this.dialogEl = this.root.querySelector('#dialog-layer')!;
+    this.dialogEl = this.root.querySelector('#dlg-dock')!;
     this.dlgSpeakerEl = this.root.querySelector('#dlg-speaker')!;
     this.dlgTextEl = this.root.querySelector('#dlg-text')!;
     this.dlgOptsEl = this.root.querySelector('#dlg-opts')!;
-    this.dlgNextBtn = this.root.querySelector('#dlg-next')!;
-    this.dlgSpeakBtn = this.root.querySelector('#dlg-tts')!;
+    this.dlgNextBtn = this.root.querySelector('#dlg-next-btn')!;
+    this.dlgSpeakBtn = this.root.querySelector('#dlg-speak-btn')!;
 
     this.backdropEl = this.root.querySelector('#modal-backdrop')!;
     this.modalCardEl = this.root.querySelector('#modal-card')!;
@@ -202,10 +224,42 @@ export class UIScene extends Phaser.Scene {
     this.modalBodyEl = this.root.querySelector('#modal-body')!;
     this.modalFooterEl = this.root.querySelector('#modal-footer')!;
 
-    this.root.querySelector('#btn-pause')!.addEventListener('click', () => this.openPause());
-    this.root.querySelector('#modal-close')!.addEventListener('click', () => this.closeModal());
+    this.root.querySelectorAll('[data-act]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const act = (btn as HTMLElement).dataset.act;
+        if (act === 'eat') {
+          if (!state.modal) this.toast(state.eat());
+        } else if (act) {
+          this.togglePanel(act as ActivePanel);
+        }
+      });
+    });
+
+    const bgmBtn = this.root.querySelector('#btn-toggle-bgm') as HTMLButtonElement | null;
+    if (bgmBtn) {
+      const updateBgmLabel = () => {
+        bgmBtn.innerHTML = bgm.isMuted ? '<span>🔇 Musik</span>' : '<span>🎵 Musik</span>';
+        bgmBtn.style.opacity = bgm.isMuted ? '0.6' : '1';
+      };
+      updateBgmLabel();
+      bgmBtn.addEventListener('click', () => {
+        const muted = bgm.toggleMute();
+        updateBgmLabel();
+        this.toast(muted ? 'Musik stummgeschaltet' : 'Musik an');
+      });
+    }
+
+    // Start background music loop
+    bgm.play('assets/audio/bgm/oasis_loop.mp3');
+
     this.dlgNextBtn.addEventListener('click', () => this.advanceDialog());
     this.dlgSpeakBtn.addEventListener('click', () => this.readDialogAloud());
+    this.root.querySelector('#modal-close-btn')!.addEventListener('click', () => this.closeModal());
+    this.backdropEl.addEventListener('click', (e) => {
+      if (e.target === this.backdropEl && this.activePanel !== 'start') {
+        this.closeModal();
+      }
+    });
   }
 
   private bindEvents(): void {
@@ -225,43 +279,42 @@ export class UIScene extends Phaser.Scene {
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
       if (this.isTyping()) return;
 
-      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+      if (e.key === 'Escape') {
         if (this.activePanel !== 'none') this.closeModal();
-        else this.openPause();
+        return;
+      }
+      if (e.key === 'p' || e.key === 'P') {
+        this.togglePanel('pause');
         return;
       }
       if (e.key === 'i' || e.key === 'I' || e.key === 'b' || e.key === 'B') {
-        if (this.activePanel === 'bag') this.closeModal();
-        else this.openBag();
+        this.togglePanel('bag');
         return;
       }
       if (e.key === 'c' || e.key === 'C') {
-        if (this.activePanel === 'craft') this.closeModal();
-        else this.openCraft();
+        this.togglePanel('craft');
         return;
       }
-      if (e.key === 't' || e.key === 'T') {
-        if (this.activePanel === 'trade') this.closeModal();
-        else this.openTrade();
+      if (e.key === 'h' || e.key === 'H' || e.key === 't' || e.key === 'T') {
+        this.togglePanel('trade');
         return;
       }
       if (e.key === 'l' || e.key === 'L') {
-        if (this.activePanel === 'lexicon') this.closeModal();
-        else this.openLexicon();
+        this.togglePanel('lexicon');
         return;
       }
       if (e.key === 'z' || e.key === 'Z') {
-        if (this.activePanel === 'timeline') this.closeModal();
-        else this.openTimeline();
+        this.togglePanel('timeline');
         return;
       }
       if (e.key === 'u' || e.key === 'U') {
-        if (this.activePanel === 'cert') this.closeModal();
-        else this.openCertificate();
+        this.togglePanel('cert');
         return;
       }
-      if (e.key === '1' && e.ctrlKey) {
-        state.eat();
+      if (e.key === 'e' || e.key === 'E' || e.key === ' ' || e.key === 'Enter') {
+        if (this.dialogEl.style.display !== 'none') {
+          this.advanceDialog();
+        }
       }
     });
   }
@@ -292,17 +345,18 @@ export class UIScene extends Phaser.Scene {
     const ch = state.currentChapterDef;
     const qIdx = state.quest;
     this.titleEl.textContent = `Kapitel ${state.chapter}: ${ch.title.split(':')[1]?.trim() || ch.title}`;
-    this.questEl.textContent = ch.quests[qIdx] || 'Sprich mit deinem Mentor!';
+    this.questEl.innerHTML = `<strong>Aufgabe:</strong> ${highlightTerms(ch.quests[qIdx] || 'Sprich mit deinem Mentor!')}`;
 
     this.foodBar.style.width = `${Math.min(100, Math.max(0, state.food))}%`;
     this.safetyBar.style.width = `${Math.min(100, Math.max(0, state.safety))}%`;
     this.knowBar.style.width = `${Math.min(100, Math.max(0, state.knowledge))}%`;
+    this.lexCountEl.textContent = `Lexikon: ${state.lexicon.length}/${Object.keys(LEXICON).length}`;
   }
 
   private renderHotbar(): void {
     const entries = Object.entries(state.inventory).filter(([_, count]) => count > 0);
     if (entries.length === 0) {
-      this.hotbarEl.innerHTML = `<div class="hotbar-empty">Drücke <strong>C</strong> (Handwerk) oder <strong>I</strong> (Rucksack)</div>`;
+      this.hotbarEl.innerHTML = `<div style="font-size:12px;color:#cbd5e1;padding:4px 8px;">Drücke <strong>C</strong> (Handwerk) oder <strong>I</strong> (Rucksack)</div>`;
       return;
     }
 
@@ -312,8 +366,8 @@ export class UIScene extends Phaser.Scene {
       const isFood = def?.category === 'food';
       return `
         <div class="hotbar-slot ${isFood ? 'slot-food' : ''}" title="${escapeHtml(name)} (${count}×)">
+          <img src="assets/icons/${id}.png" class="pixel-icon" alt="${escapeHtml(name)}" onerror="this.style.display='none'" />
           <div class="slot-badge">${count}</div>
-          <div class="slot-name">${escapeHtml(name.slice(0, 10))}</div>
         </div>
       `;
     }).join('');
@@ -334,11 +388,11 @@ export class UIScene extends Phaser.Scene {
     this.toastBusy = true;
     const msg = this.toastQueue.shift()!;
     this.toastEl.textContent = msg;
-    this.toastEl.classList.add('toast-show');
+    this.toastEl.classList.add('visible');
     sfx.click();
 
     setTimeout(() => {
-      this.toastEl.classList.remove('toast-show');
+      this.toastEl.classList.remove('visible');
       setTimeout(() => this.pumpToast(), 250);
     }, 2200);
   }
@@ -347,7 +401,7 @@ export class UIScene extends Phaser.Scene {
     this.spec = spec;
     this.nodeIdx = 0;
     state.modal = true;
-    this.dialogEl.style.display = 'flex';
+    this.dialogEl.style.display = 'block';
     this.renderDialogNode();
   }
 
@@ -368,19 +422,18 @@ export class UIScene extends Phaser.Scene {
 
       node.options.forEach((opt, idx) => {
         const btn = document.createElement('button');
-        btn.className = 'retro-btn dlg-opt-btn';
+        btn.className = 'retro-btn';
+        btn.style.margin = '4px';
         btn.innerHTML = `${String.fromCharCode(65 + idx)}) ${escapeHtml(opt)}`;
         btn.addEventListener('click', () => {
           if (idx === node.correct) {
             sfx.quest();
-            btn.classList.add('opt-correct');
             this.dlgTextEl.innerHTML = `<span style="color:#86efac;font-weight:bold;">Richtig!</span> ${highlightTerms(node.explain || '')}`;
             this.dlgOptsEl.innerHTML = '';
             this.dlgNextBtn.style.display = 'inline-block';
             this.dlgNextBtn.textContent = 'Weiter ▶';
           } else {
             sfx.eat();
-            btn.classList.add('opt-wrong');
             state.quizAttempts++;
             this.dlgTextEl.innerHTML = `<span style="color:#f87171;font-weight:bold;">Nicht ganz.</span> Überlege noch einmal genau oder frage deinen Mentor!`;
           }
@@ -390,7 +443,7 @@ export class UIScene extends Phaser.Scene {
     } else {
       this.dlgTextEl.innerHTML = highlightTerms(node.text || '');
       this.dlgNextBtn.style.display = 'inline-block';
-      this.dlgNextBtn.textContent = this.nodeIdx === this.spec.nodes.length - 1 ? 'Abschließen ✔' : 'Weiter ▶';
+      this.dlgNextBtn.textContent = this.nodeIdx === this.spec.nodes.length - 1 ? 'Abschließen ✔' : 'Weiter (E) ▶';
     }
   }
 
@@ -422,10 +475,41 @@ export class UIScene extends Phaser.Scene {
     window.speechSynthesis.speak(u);
   }
 
+  private togglePanel(panel: ActivePanel): void {
+    if (this.activePanel === panel) {
+      this.closeModal();
+      return;
+    }
+    switch (panel) {
+      case 'pause':
+        this.openPause();
+        break;
+      case 'bag':
+        this.openBag();
+        break;
+      case 'craft':
+        this.openCraft();
+        break;
+      case 'trade':
+        this.openTrade();
+        break;
+      case 'lexicon':
+        this.openLexicon();
+        break;
+      case 'timeline':
+        this.openTimeline();
+        break;
+      case 'cert':
+        this.openCertificate();
+        break;
+    }
+  }
+
   private openModal(panel: ActivePanel, title: string): void {
     this.activePanel = panel;
     state.modal = true;
     this.modalTitleEl.textContent = title;
+    this.modalCardEl.classList.toggle('dark', panel === 'pause');
     this.backdropEl.style.display = 'flex';
   }
 
@@ -439,23 +523,31 @@ export class UIScene extends Phaser.Scene {
   private openStartScreen(): void {
     this.openModal('start', 'Willkommen im Alten Ägypten');
     this.modalBodyEl.innerHTML = `
-      <div class="start-box">
-        <h3 class="start-subtitle">Kemet – Das Geschenk des Nils</h3>
-        <p class="start-text">
-          Erlebe die Entstehung der ersten Hochkultur der Menschheit: Von nomadischen Jägern am Nil über die Erfindung des Schadufs und der Hieroglyphen bis zum Bau der Pyramiden von Gizeh!
-        </p>
-        <div class="char-setup">
-          <label><strong>Dein Forscher-Name:</strong></label>
-          <input type="text" id="start-name" class="retro-input" value="${escapeHtml(state.playerName)}" maxlength="12" />
-          <div class="gender-pick">
-            <label><input type="radio" name="gender" value="female" ${state.playerGender === 'female' ? 'checked' : ''} /> 👩 Ägypterin Merit</label>
-            <label><input type="radio" name="gender" value="male" ${state.playerGender === 'male' ? 'checked' : ''} /> 👨 Ägypter Senbi</label>
-          </div>
+      <div class="start-hero">
+        <div class="start-hero-title">Kemet – Das Geschenk des Nils</div>
+        <div class="start-hero-sub">16-Bit-Geschichtsabenteuer der Heimbürgeschule Kahla</div>
+      </div>
+      <p style="font-size:14px;color:#f8fafc;line-height:1.5;margin-bottom:12px;">
+        Erlebe die Entstehung der ersten Hochkultur der Menschheit: Von nomadischen Schilffischern am Nil über die Erfindung des Schadufs und der Hieroglyphen bis zum Pyramidenbau von Gizeh!
+      </p>
+      <div style="background:#2a1d10;padding:12px;border:1.5px solid #e8c170;border-radius:8px;margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:bold;color:#fde047;">Dein Forscher-Name:</label>
+        <input type="text" id="start-name" style="width:100%;padding:6px 10px;margin:6px 0 10px;background:#1e1b18;border:1px solid #e8c170;color:#fff;border-radius:5px;font-size:14px;" value="${escapeHtml(state.playerName)}" maxlength="14" />
+        <label style="font-size:13px;font-weight:bold;color:#fde047;display:block;margin-bottom:6px;">Wähle deinen Charakter:</label>
+        <div style="display:flex;gap:12px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="radio" name="gender" value="female" ${state.playerGender === 'female' ? 'checked' : ''} />
+            <span>👩 Merit (Ägypterin)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="radio" name="gender" value="male" ${state.playerGender === 'male' ? 'checked' : ''} />
+            <span>👨 Nakht (Ägypter)</span>
+          </label>
         </div>
       </div>
     `;
     this.modalFooterEl.innerHTML = `
-      <button class="retro-btn btn-primary" id="btn-start-adventure">Abenteuer am Nil starten ▶</button>
+      <button class="retro-btn btn-primary" id="btn-start-adventure" style="background:#d97706;border-color:#fef08a;color:#1e1b18;font-weight:900;">Abenteuer am Nil starten ▶</button>
     `;
 
     this.modalFooterEl.querySelector('#btn-start-adventure')!.addEventListener('click', () => {
@@ -477,26 +569,26 @@ export class UIScene extends Phaser.Scene {
     const code = state.exportCode();
 
     this.modalBodyEl.innerHTML = `
-      <div class="pause-stats">
-        <div class="pause-stat-row"><span>Forscher:</span> <strong>${escapeHtml(state.playerName)} (${state.playerGender === 'female' ? 'Weiblich' : 'Männlich'})</strong></div>
-        <div class="pause-stat-row"><span>Titel / Rang:</span> <strong style="color:#fde047;">${escapeHtml(rank)}</strong></div>
-        <div class="pause-stat-row"><span>Aktuelles Kapitel:</span> <strong>Kapitel ${state.chapter}</strong></div>
-        <div class="pause-stat-row"><span>Spielzeit:</span> <strong>${timeStr}</strong></div>
-        <div class="pause-stat-row"><span>Gesammeltes Wissen:</span> <strong>${state.knowledge}% (${state.lexicon.length} / ${Object.keys(LEXICON).length} Einträge)</strong></div>
+      <div class="pause-stats" style="margin-bottom:14px;">
+        <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Forscher:</span> <strong>${escapeHtml(state.playerName)} (${state.playerGender === 'female' ? 'Weiblich' : 'Männlich'})</strong></div>
+        <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Titel / Rang:</span> <strong style="color:#fde047;">${escapeHtml(rank)}</strong></div>
+        <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Aktuelles Zeitalter:</span> <strong>Kapitel ${state.chapter}</strong></div>
+        <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Spielzeit:</span> <strong>${timeStr}</strong></div>
+        <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;"><span>Wissen:</span> <strong>${state.knowledge}% (${state.lexicon.length} / ${Object.keys(LEXICON).length} Einträge)</strong></div>
       </div>
 
-      <div class="code-box">
-        <label><strong>Dein Mnemotechnik-Speichercode (für die Schule):</strong></label>
-        <div class="code-row">
-          <input type="text" readonly value="${code}" class="retro-input code-input" id="pause-code-field" />
+      <div style="background:#2a1d10;padding:12px;border:1.5px solid #e8c170;border-radius:8px;margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:bold;color:#fde047;">Dein Mnemotechnik-Speichercode (ohne Datenbank):</label>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <input type="text" readonly value="${code}" style="flex:1;background:#1e1b18;border:1px solid #e8c170;color:#fde047;padding:5px 8px;font-family:monospace;font-size:14px;border-radius:4px;" id="pause-code-field" />
           <button class="retro-btn" id="btn-copy-code">📋 Kopieren</button>
         </div>
       </div>
 
-      <div class="code-box" style="margin-top:12px;">
-        <label>Code eingeben / Fortsetzen:</label>
-        <div class="code-row">
-          <input type="text" placeholder="z. B. EGY-MERIT-W-K2-Q3-10M" class="retro-input" id="input-import-code" />
+      <div style="background:#2a1d10;padding:12px;border:1.5px solid #e8c170;border-radius:8px;">
+        <label style="font-size:12px;font-weight:bold;color:#fde047;">Code eingeben / Fortsetzen:</label>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <input type="text" placeholder="z. B. EGY-MERIT-W-K2-Q3-10M" style="flex:1;background:#1e1b18;border:1px solid #e8c170;color:#fff;padding:5px 8px;font-size:13px;border-radius:4px;" id="input-import-code" />
           <button class="retro-btn" id="btn-import-code">Laden ⏎</button>
         </div>
       </div>
@@ -534,15 +626,21 @@ export class UIScene extends Phaser.Scene {
     const items = Object.entries(state.inventory).filter(([_, cnt]) => cnt > 0);
 
     const listHtml = items.length === 0
-      ? `<p style="padding:16px;color:#cbd5e1;">Dein Rucksack ist noch leer. Schneide Papyrus oder sammle Schilf am Nilufer!</p>`
-      : `<div class="bag-grid">
+      ? `<div style="padding:28px 16px;text-align:center;color:#5a3a1a;font-size:15px;font-weight:600;">
+           🎒 Dein Rucksack ist noch leer.<br>
+           <span style="font-size:13px;color:#785331;font-weight:normal;display:inline-block;margin-top:6px;">
+             Schneide Papyrus-Schilf am Nilufer oder sammle Akazienäste und Wüstenkiesel in der Oase!
+           </span>
+         </div>`
+      : `<div class="bag-items-grid">
           ${items.map(([id, cnt]) => {
             const def = ITEMS[id as EgyptItemId];
             const name = def?.name ?? id;
             return `
-              <div class="bag-item" data-id="${id}">
-                <div class="bag-count">${cnt}×</div>
-                <div class="bag-name">${escapeHtml(name)}</div>
+              <div class="bag-item-card" data-id="${id}">
+                <img src="assets/icons/${id}.png" alt="${escapeHtml(name)}" onerror="this.style.display='none'" />
+                <div class="bag-item-count-badge">${cnt}×</div>
+                <div class="bag-item-title">${escapeHtml(name)}</div>
               </div>
             `;
           }).join('')}
@@ -550,7 +648,7 @@ export class UIScene extends Phaser.Scene {
 
     this.modalBodyEl.innerHTML = listHtml;
     this.modalFooterEl.innerHTML = `
-      <span style="font-size:12px;color:#cbd5e1;">Tipp: Drücke C zum Herstellen von Werkzeugen und Baumaterialien.</span>
+      <span style="font-size:12px;color:#6b4423;font-weight:600;">Tipp: Drücke C zum Herstellen von Reusen, Werkzeugen und Materialien.</span>
     `;
   }
 
@@ -559,7 +657,7 @@ export class UIScene extends Phaser.Scene {
     const recipes = RECIPES;
 
     this.modalBodyEl.innerHTML = `
-      <div class="recipe-list">
+      <div style="display:flex;flex-direction:column;gap:8px;">
         ${recipes.map((r) => {
           const can = state.canCraft(r);
           const costStr = Object.entries(r.cost).map(([id, num]) => {
@@ -570,15 +668,15 @@ export class UIScene extends Phaser.Scene {
           }).join(', ');
 
           return `
-            <div class="recipe-card ${can ? 'can-craft' : 'locked-craft'}">
-              <div class="recipe-header">
-                <strong>${escapeHtml(r.name)}</strong>
+            <div style="background:#2a1d10;border:1.5px solid ${can ? '#e8c170' : '#475569'};border-radius:8px;padding:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <strong style="color:${can ? '#ffe9b0' : '#94a3b8'};font-size:14px;">${escapeHtml(r.name)}</strong>
                 <button class="retro-btn btn-craft" data-id="${r.id}" ${can ? '' : 'disabled'}>
                   ${can ? 'Herstellen 🔨' : 'Material fehlt'}
                 </button>
               </div>
-              <p class="recipe-desc">${escapeHtml(r.desc)}</p>
-              <div class="recipe-cost">Kosten: ${costStr}</div>
+              <p style="font-size:12px;color:#cbd5e1;margin:4px 0 6px;">${escapeHtml(r.desc)}</p>
+              <div style="font-size:12px;">Kosten: ${costStr}</div>
             </div>
           `;
         }).join('')}
@@ -607,7 +705,7 @@ export class UIScene extends Phaser.Scene {
       <p style="margin-bottom:12px;color:#fde047;">
         Im Alten Ägypten gab es noch kein Münzgeld! Alle Güter wurden im reinen Tauschhandel getauscht.
       </p>
-      <div class="trade-list">
+      <div style="display:flex;flex-direction:column;gap:8px;">
         ${trades.map((t) => {
           const can = state.canAffordTrade(t);
           const giveStr = Object.entries(t.give).map(([id, num]) => {
@@ -621,16 +719,16 @@ export class UIScene extends Phaser.Scene {
           const recStr = `${t.receive.count}× ${recDef?.name ?? t.receive.item}`;
 
           return `
-            <div class="trade-card ${can ? 'can-trade' : 'locked-trade'}">
-              <div class="trade-header">
-                <strong>${escapeHtml(t.name)}</strong>
+            <div style="background:#2a1d10;border:1.5px solid ${can ? '#e8c170' : '#475569'};border-radius:8px;padding:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <strong style="color:${can ? '#ffe9b0' : '#94a3b8'};font-size:14px;">${escapeHtml(t.name)}</strong>
                 <button class="retro-btn btn-trade-action" data-id="${t.id}" ${can ? '' : 'disabled'}>
                   ${can ? 'Tauschen 🏺' : 'Waren fehlen'}
                 </button>
               </div>
-              <p class="trade-desc">${escapeHtml(t.desc)}</p>
-              <div class="trade-give">Du gibst: ${giveStr}</div>
-              <div class="trade-receive" style="color:#60a5fa;margin-top:4px;">Du erhältst: <strong>${recStr}</strong></div>
+              <p style="font-size:12px;color:#cbd5e1;margin:4px 0 6px;">${escapeHtml(t.desc)}</p>
+              <div style="font-size:12px;">Du gibst: ${giveStr}</div>
+              <div style="font-size:12px;color:#60a5fa;margin-top:2px;">Du erhältst: <strong>${recStr}</strong></div>
             </div>
           `;
         }).join('')}
@@ -658,30 +756,31 @@ export class UIScene extends Phaser.Scene {
 
     this.modalBodyEl.innerHTML = `
       <div class="lex-layout">
-        <div class="lex-sidebar">
+        <div class="lex-list">
           ${keys.map((k) => {
             const unlocked = state.hasLexicon(k);
             const ent = LEXICON[k];
-            const active = k === this.lexSelected ? 'lex-active' : '';
+            const active = k === this.lexSelected ? 'active' : '';
             return `
-              <div class="lex-nav-item ${active} ${unlocked ? 'unlocked' : 'locked'}" data-key="${k}">
-                ${unlocked ? '📜' : '🔒'} ${escapeHtml(ent.title)}
-              </div>
+              <button class="lex-item-btn ${active} ${unlocked ? '' : 'locked'}" data-key="${k}">
+                <span>${unlocked ? '📜' : '🔒'}</span>
+                <span>${escapeHtml(ent.title)}</span>
+              </button>
             `;
           }).join('')}
         </div>
-        <div class="lex-content">
+        <div class="lex-detail-card">
           ${state.hasLexicon(this.lexSelected)
             ? `
-              <h3 style="color:#fde047;margin-bottom:8px;">${escapeHtml(selected.title)}</h3>
-              <div class="lex-era" style="color:#93c5fd;font-size:12px;margin-bottom:12px;">Epoche: ${escapeHtml(selected.era)}</div>
-              <div class="lex-body" style="font-size:14px;line-height:1.6;color:#f8fafc;">
+              <h3 style="color:#b45309;margin:0 0 4px;font-size:16px;">${escapeHtml(selected.title)}</h3>
+              <div style="color:#64748b;font-size:12px;font-weight:bold;margin-bottom:8px;">Epoche: ${escapeHtml(selected.era)}</div>
+              <div style="font-size:14px;line-height:1.6;color:#2a1d10;">
                 ${highlightTerms(selected.text)}
               </div>
             `
             : `
-              <h3 style="color:#94a3b8;margin-bottom:8px;">🔒 Noch nicht entdeckt</h3>
-              <p style="color:#cbd5e1;font-size:14px;line-height:1.5;">
+              <h3 style="color:#64748b;margin:0 0 6px;font-size:16px;">🔒 Noch nicht entdeckt</h3>
+              <p style="color:#475569;font-size:13.5px;line-height:1.5;">
                 ${escapeHtml(selected.unlockHint)}
               </p>
             `}
@@ -689,7 +788,7 @@ export class UIScene extends Phaser.Scene {
       </div>
     `;
 
-    this.modalBodyEl.querySelectorAll('.lex-nav-item').forEach((item) => {
+    this.modalBodyEl.querySelectorAll('.lex-item-btn').forEach((item) => {
       item.addEventListener('click', (e) => {
         this.lexSelected = (e.currentTarget as HTMLElement).getAttribute('data-key')!;
         this.openLexicon();
@@ -697,7 +796,7 @@ export class UIScene extends Phaser.Scene {
     });
 
     this.modalFooterEl.innerHTML = `
-      <span style="font-size:12px;color:#cbd5e1;">Entdeckt: ${state.lexicon.length} von ${keys.length} Wissensbausteinen.</span>
+      <span style="font-size:12px;color:#6b4423;font-weight:600;">Entdeckt: ${state.lexicon.length} von ${keys.length} Wissensbausteinen.</span>
     `;
   }
 
@@ -706,20 +805,20 @@ export class UIScene extends Phaser.Scene {
     const rows = EPOCH_COMPARISON;
 
     this.modalBodyEl.innerHTML = `
-      <table class="epoch-table" style="width:100%;border-collapse:collapse;font-size:12px;color:#f8fafc;">
+      <table class="epoch-table">
         <thead>
-          <tr style="border-bottom:2px solid #eab308;color:#fde047;text-align:left;">
-            <th style="padding:8px;">Historische Dimension</th>
-            <th style="padding:8px;">🦣 Steinzeit & Metallzeit</th>
-            <th style="padding:8px;">𓂀 Altes Ägypten (Hochkultur)</th>
+          <tr>
+            <th>Historische Dimension</th>
+            <th>🦣 Steinzeit & Metallzeit</th>
+            <th>𓂀 Altes Ägypten (Hochkultur)</th>
           </tr>
         </thead>
         <tbody>
           ${rows.map((r) => `
-            <tr style="border-bottom:1px solid #334155;">
-              <td style="padding:8px;font-weight:bold;color:#fde047;">${escapeHtml(r.topic)}</td>
-              <td style="padding:8px;color:#cbd5e1;">${escapeHtml(r.stoneage)}</td>
-              <td style="padding:8px;color:#93c5fd;">${escapeHtml(r.egypt)}</td>
+            <tr>
+              <td><strong>${escapeHtml(r.topic)}</strong></td>
+              <td>${escapeHtml(r.stoneage)}</td>
+              <td>${escapeHtml(r.egypt)}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -737,7 +836,7 @@ export class UIScene extends Phaser.Scene {
     const code = state.exportCode();
 
     this.modalBodyEl.innerHTML = `
-      <div class="cert-frame" style="border:4px double #eab308;padding:20px;text-align:center;background:#1e1b18;color:#fef08a;">
+      <div style="border:4px double #eab308;padding:20px;text-align:center;background:#1e1b18;color:#fef08a;border-radius:8px;">
         <h1 style="font-size:20px;margin-bottom:6px;letter-spacing:2px;">📜 KÖNIGLICHE PHARAONEN-URKUNDE 📜</h1>
         <p style="font-size:12px;color:#fde047;">Heimbürgeschule Kahla · Geschichtsunterricht Klasse 5/6</p>
         <hr style="border:0;border-top:1px solid #ca8a04;margin:12px 0;" />

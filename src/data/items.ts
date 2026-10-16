@@ -356,10 +356,17 @@ export const RECIPES: EgyptRecipe[] = [
     result: { item: 'fischreuse', count: 1 },
   },
   {
+    id: 'cooked_fish',
+    name: 'Nilbarsch am Feuer braten',
+    desc: 'Frisch gefangenen Nilbarsch am knisternden Lagerfeuer knusprig garen.',
+    cost: { nilbarsch: 1 },
+    result: { item: 'cooked_fish', count: 1 },
+  },
+  {
     id: 'schaduf_teil',
     name: 'Schaduf-Hebelarm zimmern',
-    desc: 'Holzbalken mit Gegengewichtsstein und Lederschlaufe verbinden.',
-    cost: { holz: 2, stein: 1, papyrus_staengel: 1 },
+    desc: 'Akazienholz mit Gegengewichtsstein und Lederschlaufe verbinden.',
+    cost: { stock: 2, stein: 1, papyrus_staengel: 1 },
     result: { item: 'schaduf_teil', count: 1 },
   },
   {

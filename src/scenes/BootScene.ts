@@ -2,21 +2,81 @@ import Phaser from 'phaser';
 import { ITEMS } from '../data/items';
 import { state } from '../systems/GameState';
 
-export const OVERWORLD_FRAMES: Record<string, [number, number, number, number]> = {
-  grass: [0, 0, 16, 16],
-  water: [48, 48, 16, 16],
-  rocks: [68, 24, 24, 22],
-  bush: [81, 256, 30, 26],
-  speicher_hut: [208, 64, 32, 48],
+/** Benannte 16x16 und Multi-Tile-Ausschnitte aus desert_tileset.png (224x208 = 14 cols x 13 rows). */
+export const DESERT_FRAMES: Record<string, [number, number, number, number]> = {
+  // 1. Wüstensand & Dünen (Basis-Böden)
+  sand_1: [112, 0, 16, 16],          // (7, 0)
+  sand_2: [128, 0, 16, 16],          // (8, 0)
+  sand_dune_1: [144, 0, 16, 16],     // (9, 0)
+  sand_dune_2: [160, 0, 16, 16],     // (10, 0)
+  sand_ripples: [128, 16, 16, 16],   // (8, 1)
+  sand_smooth: [144, 16, 16, 16],    // (9, 1)
+
+  // 2. Nil-Wasser & Ufersäume (Autotile-Kanten Sand -> Wasser)
+  water_deep: [32, 16, 16, 16],      // (2, 1)
+  water_shallow: [48, 16, 16, 16],   // (3, 1)
+  shore_w: [16, 16, 16, 16],         // (1, 1) - Westufer (Sand links, Wasser rechts)
+  shore_e: [48, 16, 16, 16],         // (3, 1) - Ostufer (Wasser links, Sand rechts)
+  shore_n: [32, 0, 16, 16],          // (2, 0) - Nordufer
+  shore_s: [32, 32, 16, 16],         // (2, 2) - Südufer
+  shore_corner_nw: [16, 0, 16, 16],  // (1, 0)
+  shore_corner_ne: [48, 0, 16, 16],  // (3, 0)
+  shore_corner_sw: [16, 32, 16, 16], // (1, 2)
+  shore_corner_se: [48, 32, 16, 16], // (3, 2)
+
+  // 3. Fruchtbarer Nilschlamm / Silt (Kemet: schwarzer/dunkler Flussboden)
+  silt_dark: [0, 80, 16, 16],        // (0, 5)
+  silt_patch: [16, 80, 16, 16],      // (1, 5)
+  silt_rich: [32, 80, 16, 16],       // (2, 5)
+  silt_transition_w: [16, 96, 16, 16], // (1, 6)
+  silt_transition_e: [48, 96, 16, 16], // (3, 6)
+  silt_transition_n: [32, 80, 16, 16], // (2, 5)
+  silt_transition_s: [32, 112, 16, 16],// (2, 7)
+
+  // 4. Wüstensteine & Geröll (Sammelstellen und Deko)
+  pebbles: [32, 192, 16, 16],        // (2, 12) - kleine Wüstenkiesel
+  stone_flat: [48, 176, 16, 16],     // (3, 11) - flacher Flussstein
+  stone_pointy: [32, 176, 16, 16],   // (2, 11) - spitzer Kieselstein
+  rocks_small: [0, 144, 32, 16],     // (0..1, 9) - Felsformation 32x16
+  rocks_large: [0, 160, 32, 32],     // (0..1, 10..11) - großer Felsblock 32x32
+
+  // 5. Wüsten- & Flussvegetation
+  bush_small: [48, 160, 16, 16],     // (3, 10) - kleiner Wüstenstrauch
+  bush_wide: [32, 144, 48, 16],      // (2..4, 9) - breites Schilf/Buschwerk 48x16
+  cactus_tall: [64, 160, 16, 48],    // (4, 10..12) - hoher Kaktus 16x48
+  cactus_small: [48, 192, 16, 16],   // (3, 12) - kleiner Kaktus
+
+  // 6. Echte 16-Bit-Dattelpalme (48x64 px)
+  palm_tree: [80, 144, 48, 64],      // (5..7, 9..12) - Palmkrone & Stamm 48x64!
+
+  // 7. Sandstein-Klippenplateau
+  cliff_tl: [128, 144, 16, 16],      // (8, 9)
+  cliff_top: [144, 144, 16, 16],     // (9, 9)
+  cliff_tr: [176, 144, 16, 16],      // (11, 9)
+  cliff_l: [128, 160, 16, 16],       // (8, 10)
+  cliff_r: [176, 160, 16, 16],       // (11, 10)
+  cliff_bl: [128, 176, 16, 16],      // (8, 11)
+  cliff_face: [144, 176, 16, 16],    // (9, 11)
+  cliff_br: [176, 176, 16, 16],      // (11, 11)
 };
 
+/** Authentische ägyptische Lehmziegelhäuser (144x48 = 3 Häuser à 48x48 px). */
+export const HOUSE_FRAMES: Record<string, [number, number, number, number]> = {
+  hut_senbi: [0, 0, 48, 48],         // Fischer-Hütte aus Nilschlamm-Ziegeln
+  house_mid: [48, 0, 48, 48],        // Lehmziegelhaus mit Sonnendach
+  house_large: [96, 0, 48, 48],      // 2-stöckiges Palasthaus mit Dachterrasse
+};
+
+/** Benannte Ausschnitte aus gfx/objects.png. */
 export const OBJECT_FRAMES: Record<string, [number, number, number, number]> = {
   stump: [0, 160, 32, 32],
   bigrock: [320, 4, 32, 30],
   bubble_excl: [32, 128, 16, 16],
+  pot: [64, 96, 16, 16],
   ...Object.fromEntries(Array.from({ length: 7 }, (_, i) => [`fire${i}`, [64 + 16 * i, 48, 16, 16]])),
 };
 
+/** Benannte Ausschnitte aus gfx/farm.png. */
 export const FARM_FRAMES: Record<string, [number, number, number, number]> = {
   soil_raw: [144, 96, 16, 16],
   soil_dry: [176, 48, 16, 16],
@@ -36,22 +96,43 @@ export class BootScene extends Phaser.Scene {
     const bar = this.add.rectangle(w / 2 - 60, h / 2, 0, 6, 0xe8c170).setOrigin(0, 0.5);
     this.load.on('progress', (p: number) => (bar.width = 120 * p));
 
-    this.load.image('overworld', 'assets/gfx/Overworld.png');
+    // 1. Authentische 16-Bit-Tilesets der Epoche
+    this.load.image('desert_tileset', 'assets/tilesets/desert_tileset.png');
+    this.load.image('desert_houses', 'assets/tilesets/desert_houses.png');
     this.load.image('objects', 'assets/gfx/objects.png');
     this.load.image('farm', 'assets/gfx/farm.png');
-    this.load.spritesheet('player', 'assets/gfx/character.png', { frameWidth: 16, frameHeight: 32 });
-    this.load.spritesheet('npc', 'assets/gfx/NPC_test.png', { frameWidth: 16, frameHeight: 32 });
 
-    // Ägypten 16-Bit-Grafiken
-    this.load.image('egypt_pyramid', 'assets/egypt/pyramid.png');
-    this.load.image('egypt_sphinx', 'assets/egypt/sphinx.png');
-    this.load.image('egypt_obelisk', 'assets/egypt/obelisk.png');
-    this.load.image('egypt_oasis_pool', 'assets/egypt/oasis_pool.png');
-    this.load.image('egypt_papyrus_boat', 'assets/egypt/boat.png');
-    this.load.image('egypt_market_stall', 'assets/egypt/market_stall.png');
-    this.load.image('egypt_bedouin_tent', 'assets/egypt/tent.png');
-    this.load.image('egypt_date_palm', 'assets/egypt/palm.png');
-    this.load.image('egypt_papyrus_reed', 'assets/egypt/papyrus.png');
+    // 2. Ägyptische Spielfiguren & NPCs (16x32 Spritesheets, 4-Wege-Animationen)
+    this.load.spritesheet('player_egypt_male', 'assets/gfx/player_egypt_male.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('player_egypt_female', 'assets/gfx/player_egypt_female.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('npc_senbi', 'assets/gfx/npcs/npc_senbi.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('npc_ameni', 'assets/gfx/npcs/npc_ameni.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('npc_kheti', 'assets/gfx/npcs/npc_kheti.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('npc_nefermaat', 'assets/gfx/npcs/npc_nefermaat.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('npc_ani', 'assets/gfx/npcs/npc_ani.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('npc_hemiunu', 'assets/gfx/npcs/npc_hemiunu.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('npc_baki', 'assets/gfx/npcs/npc_baki.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('npc_guard', 'assets/gfx/npcs/npc_guard.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('npc_mummy', 'assets/gfx/npcs/npc_mummy.png', { frameWidth: 16, frameHeight: 32 });
+
+    // 2b. Tiere des Nils (Pflugochse & Ziege)
+    this.load.spritesheet('animal_cow', 'assets/gfx/cow.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('animal_goat', 'assets/gfx/goat.png', { frameWidth: 32, frameHeight: 32 });
+
+    // 3. Authentische Monumente, Schiffe & City-Tiles
+    this.load.image('egypt_pyramid', 'assets/egypt/Pyramid.png');
+    this.load.image('egypt_sphinx', 'assets/egypt/LionSphinx.png');
+    this.load.image('egypt_pillar', 'assets/egypt/Pillar.png');
+    this.load.image('egypt_debris', 'assets/egypt/Debris.png');
+    this.load.image('egypt_palm_alt', 'assets/egypt/PalmTree2.png');
+    this.load.image('city_b01', 'assets/tilesets/city/egypt_city_b01.png');
+    this.load.image('city_b04', 'assets/tilesets/city/egypt_city_b04.png');
+    this.load.image('egypt_boat', 'assets/egypt/papyrus_boat.png');
+
+    // 4. Didaktische 16-Bit-Item-Icons
+    for (const id of Object.keys(ITEMS)) {
+      this.load.image(`icon-${id}`, `assets/icons/${id}.png`);
+    }
   }
 
   create(): void {
@@ -60,46 +141,95 @@ export class BootScene extends Phaser.Scene {
     state.hasHadExistingSaveOnBoot = state.saves.hasSave();
     state.skipStartScreen = params.has('kapitel') || params.has('direkt');
 
-    const ow = this.textures.get('overworld');
-    for (const [name, [x, y, fw, fh]] of Object.entries(OVERWORLD_FRAMES)) ow.add(name, 0, x, y, fw, fh);
+    // Frame-Zuschnitte registrieren
+    const dt = this.textures.get('desert_tileset');
+    for (const [name, [x, y, fw, fh]] of Object.entries(DESERT_FRAMES)) dt.add(name, 0, x, y, fw, fh);
+
+    const dh = this.textures.get('desert_houses');
+    for (const [name, [x, y, fw, fh]] of Object.entries(HOUSE_FRAMES)) dh.add(name, 0, x, y, fw, fh);
+
     const ob = this.textures.get('objects');
     for (const [name, [x, y, fw, fh]] of Object.entries(OBJECT_FRAMES)) ob.add(name, 0, x, y, fw, fh);
+
     const fm = this.textures.get('farm');
     for (const [name, [x, y, fw, fh]] of Object.entries(FARM_FRAMES)) fm.add(name, 0, x, y, fw, fh);
 
-    this.createCustomSprites();
-    this.createFemaleCharacterSheet();
+    // Filter-Modus für scharfe Retro-Icons
+    for (const id of Object.keys(ITEMS)) {
+      if (this.textures.exists(`icon-${id}`)) {
+        this.textures.get(`icon-${id}`).setFilter(Phaser.Textures.FilterMode.LINEAR);
+      }
+    }
 
+    this.createCustomSprites();
+
+    // 4-Wege-Animationen für Nakht (Male) und Merit (Female)
     const dirs = ['down', 'right', 'up', 'left'];
     dirs.forEach((dir, row) => {
-      const start = row * 17;
-      // Male animations
+      const start = row * 4;
+
+      // Male animations (Nakht)
       this.anims.create({
         key: `walk-egypt-male-${dir}`,
-        frames: this.anims.generateFrameNumbers('player', { start, end: start + 3 }),
+        frames: this.anims.generateFrameNumbers('player_egypt_male', { start, end: start + 3 }),
         frameRate: 8,
         repeat: -1,
       });
       this.anims.create({
         key: `idle-egypt-male-${dir}`,
-        frames: [{ key: 'player', frame: start }],
+        frames: [{ key: 'player_egypt_male', frame: start }],
         frameRate: 1,
       });
 
-      // Female animations
+      // Female animations (Merit)
       this.anims.create({
         key: `walk-egypt-female-${dir}`,
-        frames: this.anims.generateFrameNumbers('player_female', { start, end: start + 3 }),
+        frames: this.anims.generateFrameNumbers('player_egypt_female', { start, end: start + 3 }),
         frameRate: 8,
         repeat: -1,
       });
       this.anims.create({
         key: `idle-egypt-female-${dir}`,
-        frames: [{ key: 'player_female', frame: start }],
+        frames: [{ key: 'player_egypt_female', frame: start }],
         frameRate: 1,
       });
     });
 
+    // NPC-Idle-Animationen
+    const npcIds = ['senbi', 'ameni', 'kheti', 'nefermaat', 'ani', 'hemiunu', 'baki', 'guard', 'mummy'];
+    npcIds.forEach((id) => {
+      this.anims.create({
+        key: `idle-${id}`,
+        frames: [{ key: `npc_${id}`, frame: 0 }],
+        frameRate: 1,
+      });
+    });
+
+    // Tier-Animationen (Nilkuh & Ziege)
+    this.anims.create({
+      key: 'idle-cow',
+      frames: [{ key: 'animal_cow', frame: 0 }],
+      frameRate: 1,
+    });
+    this.anims.create({
+      key: 'walk-cow',
+      frames: this.anims.generateFrameNumbers('animal_cow', { start: 4, end: 7 }),
+      frameRate: 4,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: 'idle-goat',
+      frames: [{ key: 'animal_goat', frame: 0 }],
+      frameRate: 1,
+    });
+    this.anims.create({
+      key: 'walk-goat',
+      frames: this.anims.generateFrameNumbers('animal_goat', { start: 4, end: 7 }),
+      frameRate: 5,
+      repeat: -1,
+    });
+
+    // Animiertes Lagerfeuer
     this.anims.create({
       key: 'fire',
       frames: Array.from({ length: 7 }, (_, i) => ({ key: 'objects', frame: `fire${i}` })),
@@ -113,70 +243,6 @@ export class BootScene extends Phaser.Scene {
     }
 
     this.scene.start('World');
-  }
-
-  private createFemaleCharacterSheet(): void {
-    const srcImg = this.textures.get('player').getSourceImage() as HTMLImageElement;
-    const w = srcImg.width;
-    const h = srcImg.height;
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d')!;
-    ctx.drawImage(srcImg, 0, 0);
-
-    const imgData = ctx.getImageData(0, 0, w, h);
-    const d = imgData.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const r = d[i];
-      const g = d[i + 1];
-      const b = d[i + 2];
-      if (r > 130 && g < 100 && b < 100) {
-        d[i] = Math.min(255, Math.round(b * 0.9 + 25));
-        d[i + 1] = Math.min(255, Math.round(r * 0.68));
-        d[i + 2] = Math.min(255, Math.round(r * 1.05));
-      }
-    }
-    ctx.putImageData(imgData, 0, 0);
-
-    for (let row = 0; row < 4; row++) {
-      for (let col = 0; col < 4; col++) {
-        const fx = col * 16;
-        const fy = row * 32;
-        ctx.fillStyle = '#f2c94c';
-        ctx.fillRect(fx + 5, fy + 9, 6, 1);
-        ctx.fillStyle = '#5a3420';
-        if (row === 0 || row === 2) {
-          ctx.fillRect(fx + 2, fy + 14, 2, 6);
-          ctx.fillRect(fx + 12, fy + 14, 2, 6);
-          ctx.fillStyle = '#f2c94c';
-          ctx.fillRect(fx + 2, fy + 19, 1, 1);
-          ctx.fillRect(fx + 13, fy + 19, 1, 1);
-        } else if (row === 1) {
-          ctx.fillRect(fx + 2, fy + 13, 2, 7);
-          ctx.fillStyle = '#f2c94c';
-          ctx.fillRect(fx + 2, fy + 19, 1, 1);
-        } else if (row === 3) {
-          ctx.fillRect(fx + 12, fy + 13, 2, 7);
-          ctx.fillStyle = '#f2c94c';
-          ctx.fillRect(fx + 13, fy + 19, 1, 1);
-        }
-      }
-    }
-
-    this.textures.addSpriteSheet('player_female', canvas as unknown as HTMLImageElement, {
-      frameWidth: 16,
-      frameHeight: 32,
-    });
-    this.textures.addSpriteSheet('player_egypt_female', canvas as unknown as HTMLImageElement, {
-      frameWidth: 16,
-      frameHeight: 32,
-    });
-    this.textures.addSpriteSheet(
-      'player_egypt_male',
-      this.textures.get('player').getSourceImage() as HTMLImageElement,
-      { frameWidth: 16, frameHeight: 32 },
-    );
   }
 
   private createCustomSprites(): void {
@@ -201,21 +267,7 @@ export class BootScene extends Phaser.Scene {
     gn.generateTexture('nilometer_prop', 16, 32);
     gn.destroy();
 
-    // 3. Fischreuse
-    const gf = this.add.graphics();
-    gf.fillStyle(0x8a703b, 1).fillEllipse(8, 8, 14, 8);
-    gf.fillStyle(0x4a3b1d, 1).fillEllipse(8, 8, 10, 4);
-    gf.generateTexture('fish_trap', 16, 16);
-    gf.destroy();
-
-    // 4. Nilschlamm-Haufen
-    const gc = this.add.graphics();
-    gc.fillStyle(0x3d2817, 1).fillEllipse(8, 11, 14, 6);
-    gc.fillStyle(0x593d25, 1).fillEllipse(8, 9, 10, 5);
-    gc.generateTexture('clay_pile', 16, 16);
-    gc.destroy();
-
-    // 5. Ziegelei-Ofen (kiln)
+    // 3. Ziegelei-Ofen (kiln)
     const gk = this.add.graphics();
     gk.fillStyle(0x78350f, 1).fillRect(2, 6, 28, 24);
     gk.fillStyle(0xd97706, 1).fillRect(6, 10, 20, 16);
@@ -224,14 +276,14 @@ export class BootScene extends Phaser.Scene {
     gk.generateTexture('kiln', 32, 32);
     gk.destroy();
 
-    // 6. Schreiber-Webstuhl (loom)
+    // 4. Schreiber-Webstuhl (loom)
     const gl = this.add.graphics();
     gl.fillStyle(0x6b4226, 1).fillRect(2, 4, 28, 4).fillRect(4, 8, 4, 20).fillRect(24, 8, 4, 20);
     gl.fillStyle(0xf8fafc, 1).fillRect(8, 10, 16, 14);
     gl.generateTexture('loom', 32, 32);
     gl.destroy();
 
-    // 7. Balsamierungs-Ofen (smelter)
+    // 5. Balsamierungs-Ofen (smelter)
     const gm = this.add.graphics();
     gm.fillStyle(0x475569, 1).fillRect(4, 6, 24, 24);
     gm.fillStyle(0x94a3b8, 1).fillRect(8, 10, 16, 16);
@@ -239,7 +291,7 @@ export class BootScene extends Phaser.Scene {
     gm.generateTexture('smelter', 32, 32);
     gm.destroy();
 
-    // 8. Bauhütte/Steinmetz (forge)
+    // 6. Bauhütte/Steinmetz (forge)
     const gp = this.add.graphics();
     gp.fillStyle(0x334155, 1).fillRect(4, 8, 32, 24);
     gp.fillStyle(0xfde047, 1).fillRect(8, 12, 24, 16);

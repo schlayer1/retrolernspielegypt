@@ -248,10 +248,14 @@ class GameState extends Phaser.Events.EventEmitter {
     if (ch === 1) {
       this.buildings = [];
       this.inventory = {};
+      this.playerX = 490;
+      this.playerY = 350;
       this.plots = this.plots.map((p) => ({ ...p, stage: 'raw', wateredAt: 0 }));
       this.unlockSilent(['kemet', 'deschret', 'nil']);
     } else if (ch === 2) {
       this.buildings = [];
+      this.playerX = 460;
+      this.playerY = 205;
       this.plots = this.plots.map((p) => ({ ...p, stage: 'raw', wateredAt: 0 }));
       this.unlockSilent(['nilschwemme', 'schaduf', 'emmer']);
       if (this.count('sichel') === 0) this.inventory.sichel = 1;
@@ -293,15 +297,15 @@ class GameState extends Phaser.Events.EventEmitter {
       ];
     } else if (this.chapter === 2) {
       conds = [
-        () => false,
-        () => c('nilometer') >= 1,
-        () => this.count('schaduf_teil') >= 1 || c('craft_schaduf') >= 1 || this.hasBuilding('schaduf'),
-        () => this.hasBuilding('schaduf'),
-        () => this.count('wasser') >= 1 || c('schaduf_water') >= 1,
-        () => c('seeded_plot') >= 1 || c('watered_plot') >= 1,
-        () => c('watered_plot') >= 1,
-        () => c('datteln') >= 1 || this.count('datteln') >= 1,
-        () => c('harvested_emmer') >= 1 || this.count('emmer') >= 1,
+        () => false, // Quest 0: Intro bei Ameni
+        () => c('nilometer') >= 1, // Quest 1: Nilometer abgelesen
+        () => this.count('schaduf_teil') >= 1 || c('craft_schaduf') >= 1 || this.hasBuilding('schaduf'), // Quest 2: Hebelarm
+        () => this.hasBuilding('schaduf'), // Quest 3: Schaduf am Ufer gebaut
+        () => this.count('wasser') >= 1 || c('schaduf_water') >= 1, // Quest 4: Nilwasser geschöpft
+        () => c('seeded_plot') >= 1 || c('watered_plot') >= 1, // Quest 5: Feld aufgelockert & gesät
+        () => c('watered_plot') >= 1, // Quest 6: Feld bewässert
+        () => c('datteln') >= 3 || this.count('datteln') >= 3, // Quest 7: 3x Datteln gepflückt
+        () => c('harvested_emmer') >= 1 || this.count('emmer') >= 1, // Quest 8: Reifes Emmer geerntet
       ];
     } else if (this.chapter === 3) {
       conds = [
@@ -503,3 +507,6 @@ class GameState extends Phaser.Events.EventEmitter {
 }
 
 export const state = new GameState();
+if (typeof window !== 'undefined') {
+  (window as any).kemetState = state;
+}
