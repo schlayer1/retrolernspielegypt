@@ -131,6 +131,19 @@ class BackgroundMusic {
     tryPlay();
   }
 
+  playChapter(ch: number): void {
+    const tracks: Record<number, string> = {
+      1: 'assets/audio/bgm/ch1_dunes.ogg',
+      2: 'assets/audio/bgm/ch2_scorchlight.ogg',
+      3: 'assets/audio/bgm/ch3_whispers.ogg',
+      4: 'assets/audio/bgm/ch4_canyon.ogg',
+      5: 'assets/audio/bgm/ch5_sunblade.ogg',
+      6: 'assets/audio/bgm/ch6_oasis.ogg',
+    };
+    const track = tracks[ch] || 'assets/audio/bgm/ch1_dunes.ogg';
+    this.play(track, 0.32);
+  }
+
   toggleMute(): boolean {
     this._muted = !this._muted;
     if (typeof window !== 'undefined') {

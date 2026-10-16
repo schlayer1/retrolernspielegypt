@@ -255,7 +255,7 @@ export class UIScene extends Phaser.Scene {
     }
 
     // Start background music loop
-    bgm.play('assets/audio/bgm/oasis_loop.mp3');
+    bgm.playChapter(state.chapter);
 
     this.dlgNextBtn.addEventListener('click', () => this.advanceDialog());
     this.dlgSpeakBtn.addEventListener('click', () => this.readDialogAloud());
@@ -268,6 +268,10 @@ export class UIScene extends Phaser.Scene {
   }
 
   private bindEvents(): void {
+    state.on('chapterChanged', (ch: number) => {
+      bgm.playChapter(ch);
+      this.renderHUD();
+    });
     state.on('inventory', () => {
       this.renderHUD();
       this.renderHotbar();

@@ -323,15 +323,23 @@ class GameState extends Phaser.Events.EventEmitter {
       if (this.count('sichel') === 0) this.inventory.sichel = 1;
     } else if (ch === 3) {
       this.buildings = ['schaduf'];
+      this.playerX = 390;
+      this.playerY = 210;
       this.unlockSilent(['pharao', 'wesir', 'hochkultur']);
     } else if (ch === 4) {
       this.buildings = ['schaduf', 'ziegelei', 'speicher'];
+      this.playerX = 270;
+      this.playerY = 175;
       this.unlockSilent(['schreiber', 'hieroglyphen', 'polytheismus']);
     } else if (ch === 5) {
       this.buildings = ['schaduf', 'ziegelei', 'speicher', 'schreiberhaus', 'wabet'];
+      this.playerX = 140;
+      this.playerY = 220;
       this.unlockSilent(['pyramiden', 'sphinx', 'steinmetze']);
     } else if (ch === 6) {
       this.buildings = ['schaduf', 'ziegelei', 'speicher', 'schreiberhaus', 'wabet', 'steinmetz'];
+      this.playerX = 540;
+      this.playerY = 470;
       this.unlockSilent(['kornkammer_roms', 'kleopatra']);
     }
 
@@ -349,68 +357,67 @@ class GameState extends Phaser.Events.EventEmitter {
 
     if (this.chapter === 1) {
       conds = [
-        () => false,
+        () => false, // 0: Intro bei Senbi
         () => c('papyrus_staengel') >= 3 || this.count('papyrus_staengel') >= 3,
         () => (this.count('stock') >= 2 && this.count('stein') >= 2) || c('schilf_gesammelt') >= 2,
         () => this.count('fischreuse') >= 1 || c('craft_fischreuse') >= 1,
         () => c('trap') >= 1 || c('fisch_fang') >= 1 || this.count('nilbarsch') >= 1,
         () => c('cooked') >= 1 || c('cooked_fish') >= 1,
-        () => c('senbi_talk') >= 1,
       ];
     } else if (this.chapter === 2) {
       conds = [
-        () => false, // Quest 0: Intro bei Ameni
-        () => c('nilometer') >= 1, // Quest 1: Nilometer abgelesen
-        () => this.count('schaduf_teil') >= 1 || c('craft_schaduf') >= 1 || this.hasBuilding('schaduf'), // Quest 2: Hebelarm
-        () => this.hasBuilding('schaduf'), // Quest 3: Schaduf am Ufer gebaut
-        () => this.count('wasser') >= 1 || c('schaduf_water') >= 1, // Quest 4: Nilwasser geschöpft
-        () => c('seeded_plot') >= 1 || c('watered_plot') >= 1, // Quest 5: Feld aufgelockert & gesät
-        () => c('watered_plot') >= 1, // Quest 6: Feld bewässert
-        () => c('datteln') >= 3 || this.count('datteln') >= 3, // Quest 7: 3x Datteln gepflückt
-        () => c('harvested_emmer') >= 1 || this.count('emmer') >= 1, // Quest 8: Reifes Emmer geerntet
+        () => false, // 0: Intro bei Ameni
+        () => c('nilometer') >= 1, // 1: Nilometer abgelesen
+        () => this.count('schaduf_teil') >= 1 || c('craft_schaduf') >= 1 || this.hasBuilding('schaduf'), // 2: Hebelarm
+        () => this.hasBuilding('schaduf'), // 3: Schaduf am Ufer gebaut
+        () => this.count('wasser') >= 1 || c('schaduf_water') >= 1, // 4: Nilwasser geschöpft
+        () => c('seeded_plot') >= 1, // 5: Feld aufgelockert & gesät
+        () => c('watered_plot') >= 1, // 6: Feld bewässert
+        () => c('datteln') >= 3 || this.count('datteln') >= 3, // 7: 3x Datteln gepflückt
+        () => c('harvested_emmer') >= 1 || this.count('emmer') >= 1, // 8: Reifes Emmer geerntet
       ];
     } else if (this.chapter === 3) {
       conds = [
-        () => false,
-        () => this.hasBuilding('ziegelei'),
-        () => c('lehmziegel') >= 3 || this.count('lehmziegel') >= 3,
-        () => this.hasBuilding('speicher'),
-        () => this.count('tontopf') >= 1 || c('craft_tontopf') >= 1,
-        () => this.count('leinen') >= 1 || c('craft_leinen') >= 1,
-        () => (c('brot') >= 2 || this.count('brot') >= 2) && (c('bier') >= 1 || this.count('bier') >= 1),
-        () => c('abgabe_done') >= 1,
+        () => false, // 0: Intro bei Nefermaat
+        () => this.count('nilschlamm') >= 3 || c('dug_mud') >= 3, // 1: Schlamm gegraben
+        () => this.hasBuilding('ziegelei'), // 2: Ziegelei gebaut
+        () => this.count('lehmziegel') >= 3 || c('craft_lehmziegel') >= 3, // 3: 3x Ziegel gestrichen
+        () => this.hasBuilding('speicher'), // 4: Speicher gebaut
+        () => this.count('tontopf') >= 1 || c('craft_tontopf') >= 1, // 5: Vorratstopf gebrannt
+        () => this.count('leinen') >= 1 || c('craft_leinen') >= 1, // 6: Leinen gewebt
+        () => (this.count('brot') >= 2 || c('brot') >= 2) && (this.count('bier') >= 1 || c('bier') >= 1), // 7: Brot & Bier
       ];
     } else if (this.chapter === 4) {
       conds = [
-        () => false,
-        () => this.hasBuilding('schreiberhaus'),
-        () => this.count('papyrusrolle') >= 1 || c('craft_papyrusrolle') >= 1,
-        () => this.count('pinsel_tinte') >= 1 || c('craft_pinsel') >= 1,
-        () => c('steuer_notiert') >= 1,
-        () => this.hasBuilding('wabet'),
-        () => (this.count('salz') >= 2 || c('salz_found') >= 2) && (this.count('kanope') >= 1 || c('craft_kanope') >= 1),
-        () => this.count('skanabaeus') >= 1 || c('craft_skanabaeus') >= 1,
+        () => false, // 0: Intro bei Ani
+        () => this.hasBuilding('schreiberhaus'), // 1: Schreiberhaus gebaut
+        () => this.count('papyrusrolle') >= 1 || c('craft_papyrusrolle') >= 1, // 2: Papyrusrolle
+        () => this.count('pinsel_tinte') >= 1 || c('craft_pinsel_tinte') >= 1, // 3: Binsenpinsel
+        () => c('tax_recorded') >= 1, // 4: Steuern notiert
+        () => this.hasBuilding('wabet'), // 5: Wabet gebaut
+        () => (this.count('salz') >= 2 || c('trade_salz') >= 1) && (this.count('kanope') >= 1 || c('craft_kanope') >= 1), // 6: Salz & Kanope
+        () => this.count('skanabaeus') >= 1 || c('craft_skanabaeus') >= 1, // 7: Skarabäus
       ];
     } else if (this.chapter === 5) {
       conds = [
-        () => false,
-        () => this.hasBuilding('steinmetz'),
-        () => c('kalkstein_mined') >= 3 || this.count('kalkstein') >= 3,
-        () => c('holz_chopped') >= 3 || this.count('holz') >= 3,
-        () => c('mud_poured') >= 1,
-        () => c('stone_delivered') >= 1,
-        () => c('sphinx_visited') >= 1,
-        () => c('sphinx_aligned') >= 1,
+        () => false, // 0: Intro bei Hemiunu
+        () => this.hasBuilding('steinmetz'), // 1: Bauhütte gebaut
+        () => this.count('kalkstein') >= 3 || c('kalkstein_mined') >= 3, // 2: 3x Kalkstein
+        () => this.count('stock') >= 3 || this.count('holz') >= 3 || c('timber_chopped') >= 3, // 3: Bauholz
+        () => c('ramp_watered') >= 1, // 4: Rampe befeuchtet
+        () => c('pyramidion_delivered') >= 1, // 5: Deckstein geliefert
+        () => c('sphinx_visited') >= 1, // 6: Sphinx besucht
+        () => c('sphinx_aligned') >= 1, // 7: Sphinx gen Osten ausgerichtet
       ];
     } else if (this.chapter === 6) {
       conds = [
-        () => false,
-        () => c('trade_weihrauch') >= 1 || this.count('weihrauch') >= 1,
-        () => c('trade_zedernholz') >= 1 || this.count('zedernholz') >= 1,
-        () => this.count('goldmaske') >= 1 || c('craft_goldmaske') >= 1,
-        () => c('boat_loaded') >= 1,
-        () => c('rom_deal') >= 1,
-        () => c('baki_talk') >= 1,
+        () => false, // 0: Intro bei Baki
+        () => this.count('weihrauch') >= 1 || c('trade_weihrauch') >= 1, // 1: Weihrauch
+        () => this.count('zedernholz') >= 1 || c('trade_zedernholz') >= 1, // 2: Zedernholz
+        () => this.count('goldmaske') >= 1 || c('craft_goldmaske') >= 1, // 3: Goldmaske
+        () => this.count('getreidesack') >= 3 || c('craft_getreidesack') >= 3, // 4: 3x Getreidesäcke
+        () => c('barge_loaded') >= 1, // 5: Barke beladen
+        () => c('treaty_signed') >= 1, // 6: Vertrag besiegelt
       ];
     }
 

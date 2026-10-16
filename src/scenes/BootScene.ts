@@ -127,7 +127,15 @@ export class BootScene extends Phaser.Scene {
     this.load.image('egypt_palm_alt', 'assets/egypt/PalmTree2.png');
     this.load.image('city_b01', 'assets/tilesets/city/egypt_city_b01.png');
     this.load.image('city_b04', 'assets/tilesets/city/egypt_city_b04.png');
+    this.load.image('port_tiles', 'assets/tilesets/city/port_tiles.png');
     this.load.image('egypt_boat', 'assets/egypt/papyrus_boat.png');
+    this.load.image('egypt_cargo_ship', 'assets/egypt/cargo_ship.png');
+    this.load.image('egypt_sarcophagus', 'assets/egypt/sarcophagus.png');
+    this.load.image('egypt_hieroglyph_wall', 'assets/egypt/hieroglyph_wall.png');
+    this.load.image('egypt_market_stall', 'assets/egypt/market_stall_mega.png');
+    this.load.image('egypt_tent', 'assets/egypt/tent_mega.png');
+    this.load.image('egypt_obelisk', 'assets/egypt/obelisk_mega.png');
+    this.load.image('egypt_treasure_chest', 'assets/egypt/treasure_chest.png');
 
     // 4. Didaktische 16-Bit-Item-Icons
     for (const id of Object.keys(ITEMS)) {

@@ -36,10 +36,18 @@ type Kind =
   | 'egypt_mud'
   | 'egypt_nil_water'
   | 'egypt_kalkstein'
+  | 'egypt_quarry'
+  | 'egypt_timber'
+  | 'egypt_sledge_ramp'
   | 'egypt_schaduf'
   | 'egypt_sphinx'
   | 'egypt_pyramid'
-  | 'egypt_boat';
+  | 'egypt_boat'
+  | 'egypt_cargo_barge'
+  | 'egypt_roman_envoy'
+  | 'egypt_cedar_trader'
+  | 'egypt_sarcophagus'
+  | 'egypt_bazaar_stall';
 
 interface DomLabel {
   x: number;
@@ -308,17 +316,99 @@ export class WorldScene extends Phaser.Scene {
       p.setDepth(py);
     }
 
-    // 7. Monumente in der Ferne (Pyramide & Sphinx) – erst ab Kapitel 5 (Pyramiden-Epoche)
+    // 7. Epochenspezifische Zonen & Monumente
+    // A. Palasthof des Wesirs (Kapitel 3+)
+    if (state.chapter >= 3) {
+      const p1 = this.makeObstacle(330, 165, 'egypt_pillar');
+      p1.setDisplaySize(24, 56);
+      p1.body!.setSize(16, 16).setOffset(4, 40);
+      p1.setDepth(165);
+
+      const p2 = this.makeObstacle(390, 165, 'egypt_pillar');
+      p2.setDisplaySize(24, 56);
+      p2.body!.setSize(16, 16).setOffset(4, 40);
+      p2.setDepth(165);
+      this.addLabel(360, 150, '🏛️ Hof des Wesirs', '#f59e0b');
+    }
+
+    // B. Tempelbezirk & Balsamierung (Kapitel 4+)
+    if (state.chapter >= 4) {
+      const hWall = this.makeObstacle(230, 85, 'egypt_hieroglyph_wall');
+      hWall.setDisplaySize(64, 54);
+      hWall.body!.setSize(56, 20).setOffset(4, 30);
+      hWall.setDepth(85);
+      this.addLabel(230, 60, '📜 Heilige Hieroglyphenwand', '#a78bfa');
+
+      const sarcNode = this.addNode('egypt_sarcophagus', 'egypt_sarcophagus', undefined, 180, 150);
+      sarcNode.sprite.setDisplaySize(44, 44);
+      sarcNode.sprite.setDepth(150);
+      sarcNode.label = this.addLabel(180, 125, '⚱️ Totenstadt & Sarkophag', '#c084fc');
+    }
+
+    // C. Großbaustelle Gizeh, Steinbruch & Monumente (Kapitel 5+)
     if (state.chapter >= 5) {
       const pyr = this.makeObstacle(110, 85, 'egypt_pyramid');
       pyr.body!.setSize(120, 45).setOffset(36, 100);
       pyr.setDepth(85);
       this.addLabel(110, 20, '🔺 Große Pyramide (Gizeh)', '#fef08a');
+      const pyrNode = this.addNode('egypt_pyramid', 'desert_tileset', 'stone_flat', 110, 115);
+      pyrNode.sprite.setVisible(false);
 
       const sph = this.makeObstacle(190, 260, 'egypt_sphinx');
       sph.body!.setSize(64, 28).setOffset(8, 30);
       sph.setDepth(260);
       this.addLabel(190, 225, '🦁 Große Sphinx von Gizeh', '#fef08a');
+      const sphNode = this.addNode('egypt_sphinx', 'desert_tileset', 'stone_flat', 190, 260);
+      sphNode.sprite.setVisible(false);
+
+      const obelisk = this.makeObstacle(210, 100, 'egypt_obelisk');
+      obelisk.setDisplaySize(28, 60);
+      obelisk.body!.setSize(16, 16).setOffset(6, 42);
+      obelisk.setDepth(100);
+
+      // Tura-Kalksteinbrüche
+      const q1 = this.addNode('egypt_quarry', 'desert_tileset', 'rocks_large', 70, 140);
+      q1.sprite.setDepth(140);
+      q1.label = this.addLabel(70, 115, '⛏️ Tura-Kalksteinbruch (E)', '#fde047');
+
+      const q2 = this.addNode('egypt_quarry', 'desert_tileset', 'rocks_large', 60, 200);
+      q2.sprite.setDepth(200);
+      q2.label = this.addLabel(60, 175, '⛏️ Tura-Kalksteinbruch (E)', '#fde047');
+
+      // Bauholz & Akazien
+      const t1 = this.addNode('egypt_timber', 'desert_tileset', 'palm_tree', 100, 220);
+      t1.sprite.setDepth(220);
+      t1.label = this.addLabel(100, 195, '🪓 Bauholz & Schlitten (E)', '#b45309');
+
+      // Baustellenrampe mit Schlammwasser
+      const ramp = this.addNode('egypt_sledge_ramp', 'desert_tileset', 'silt_patch', 120, 175);
+      ramp.sprite.setDepth(175);
+      ramp.label = this.addLabel(120, 155, '🪵 Baustellenrampe (E)', '#60a5fa');
+    }
+
+    // D. Nilhafen & Basar (Kapitel 6+)
+    if (state.chapter >= 6) {
+      const barge = this.addNode('egypt_cargo_barge', 'egypt_cargo_ship', undefined, 635, 485);
+      barge.sprite.setDisplaySize(80, 64);
+      barge.sprite.setDepth(485);
+      barge.label = this.addLabel(635, 455, '⛵ Römische Getreidebarke (E)', '#93c5fd');
+
+      const stall = this.makeObstacle(490, 490, 'egypt_market_stall');
+      stall.setDisplaySize(60, 60);
+      stall.body!.setSize(48, 24).setOffset(6, 32);
+      stall.setDepth(490);
+      this.addLabel(490, 460, '🏺 Basar am Nilhafen (Taste H)', '#f59e0b');
+
+      const tent = this.makeObstacle(430, 520, 'egypt_tent');
+      tent.setDisplaySize(60, 56);
+      tent.body!.setSize(48, 24).setOffset(6, 28);
+      tent.setDepth(520);
+
+      const chest = this.makeObstacle(460, 490, 'egypt_treasure_chest');
+      chest.setDisplaySize(28, 28);
+      chest.body!.setSize(20, 14).setOffset(4, 12);
+      chest.setDepth(490);
+      this.addLabel(460, 470, '👑 Schatzkammer', '#fde047');
     }
   }
 
@@ -356,6 +446,17 @@ export class WorldScene extends Phaser.Scene {
       const n = this.addNode('egypt_pebble', 'desert_tileset', 'stone_flat', x, y);
       n.sprite.setDepth(y);
     });
+
+    // D. Fruchtbarer Nilschlamm am Flussufer
+    const mudSpots = [
+      [580, 210],
+      [585, 305],
+    ];
+    mudSpots.forEach(([x, y]) => {
+      const n = this.addNode('egypt_mud', 'desert_tileset', 'silt_dark', x, y);
+      n.sprite.setDepth(y);
+      n.label = this.addLabel(x, y - 18, '🌊 Schlammufer (E)', '#a3e635');
+    });
   }
 
   private placeEgyptBuildingsAndNPCs(): void {
@@ -364,7 +465,7 @@ export class WorldScene extends Phaser.Scene {
     senbi.sprite.setDepth(350);
     senbi.label = this.addLabel(530, 325, '🐟 Fischer Senbi (Kap. 1)', '#38bdf8');
 
-    // Weitere Mentoren erst ab ihrem jeweiligen Kapitel freischalten!
+    // Weitere Mentoren & epochenspezifische NPCs
     if (state.chapter >= 2) {
       const ameni = this.addNode('egypt_ameni', 'npc_ameni', 0, 460, 185);
       ameni.sprite.setDepth(185);
@@ -390,12 +491,20 @@ export class WorldScene extends Phaser.Scene {
       const wesir = this.addNode('egypt_nefermaat', 'npc_nefermaat', 0, 360, 200);
       wesir.sprite.setDepth(200);
       wesir.label = this.addLabel(360, 175, '👑 Wesir Nefermaat (Kap. 3)', '#f59e0b');
+
+      const guard = this.addNode('egypt_kheti', 'npc_guard', 0, 330, 200);
+      guard.sprite.setDepth(200);
+      guard.label = this.addLabel(330, 175, '🛡️ Palastwache', '#fbbf24');
     }
 
     if (state.chapter >= 4) {
       const ani = this.addNode('egypt_ani', 'npc_ani', 0, 260, 160);
       ani.sprite.setDepth(160);
       ani.label = this.addLabel(260, 135, '📜 Ober-Schreiber Ani (Kap. 4)', '#a78bfa');
+
+      const mum = this.addNode('egypt_kheti', 'npc_mummy', 0, 160, 150);
+      mum.sprite.setDepth(150);
+      mum.label = this.addLabel(160, 125, '⚰️ Einbalsamierer', '#cbd5e1');
     }
 
     if (state.chapter >= 5) {
@@ -408,6 +517,14 @@ export class WorldScene extends Phaser.Scene {
       const baki = this.addNode('egypt_baki', 'npc_baki', 0, 560, 480);
       baki.sprite.setDepth(480);
       baki.label = this.addLabel(560, 455, '⚓ Hafenmeister Baki (Kap. 6)', '#60a5fa');
+
+      const trader = this.addNode('egypt_cedar_trader', 'npc_senbi', 0, 590, 520);
+      trader.sprite.setDepth(520);
+      trader.label = this.addLabel(590, 495, '🌲 Holzhändler (E)', '#38bdf8');
+
+      const envoy = this.addNode('egypt_roman_envoy', 'npc_guard', 0, 520, 510);
+      envoy.sprite.setDepth(510);
+      envoy.label = this.addLabel(520, 485, '🏛️ Gesandter aus Rom (E)', '#f87171');
     }
 
     // Bauplätze: Nur anzeigen, wenn das Kapitel erreicht ist!
@@ -451,14 +568,14 @@ export class WorldScene extends Phaser.Scene {
       this.add.image(b.x, b.y, 'desert_houses', 'house_mid').setDepth(b.y);
       this.addLabel(b.x, b.y - 24, '🌾 Königlicher Kornspeicher', '#fde047');
     } else if (b.id === 'schreiberhaus') {
-      this.add.image(b.x, b.y, 'loom').setDepth(b.y);
+      this.add.image(b.x, b.y, 'desert_houses', 'house_large').setDepth(b.y);
       this.addLabel(b.x, b.y - 24, '📜 Haus des Lebens', '#a78bfa');
     } else if (b.id === 'wabet') {
-      this.add.image(b.x, b.y, 'smelter').setDepth(b.y);
+      this.add.image(b.x, b.y, 'egypt_sarcophagus').setDisplaySize(48, 48).setDepth(b.y);
       this.addLabel(b.x, b.y - 24, '⚱️ Balsamierung (Wabet)', '#c084fc');
     } else if (b.id === 'steinmetz') {
       this.add.image(b.x, b.y, 'forge').setDepth(b.y);
-      this.addLabel(b.x, b.y - 24, '🏗️ Bauhütte der Pyramide', '#fef08a');
+      this.addLabel(b.x, b.y - 24, '🏗️ Bauhütte der Großbaustelle', '#fef08a');
     }
   }
 
@@ -704,6 +821,24 @@ export class WorldScene extends Phaser.Scene {
         return 'Drücke E: Akazienast aufheben';
       case 'egypt_pebble':
         return 'Drücke E: Wüstenkiesel aufheben';
+      case 'egypt_mud':
+        return 'Drücke E: Fruchtbaren Nilschlamm ausgraben';
+      case 'egypt_quarry':
+        return 'Drücke E: Weiße Tura-Kalksteinquader brechen';
+      case 'egypt_timber':
+        return 'Drücke E: Schweres Bauholz & Rollbalken schlagen';
+      case 'egypt_sledge_ramp':
+        return 'Drücke E: Baustellenrampe mit Schlammwasser befeuchten';
+      case 'egypt_pyramid':
+        return state.chapter === 5 && state.quest === 5 ? 'Drücke E: Deckstein (Pyramidion) auf die Spitze setzen' : 'Die Große Pyramide von Gizeh';
+      case 'egypt_sphinx':
+        return state.chapter === 5 && state.quest === 7 ? 'Drücke E: Blick der Sphinx gen Osten zur Morgensonne ausrichten' : 'Die Große Sphinx von Gizeh';
+      case 'egypt_cargo_barge':
+        return state.chapter === 6 && state.quest === 5 ? 'Drücke E: Römische Frachtbarke beladen' : 'Römische Getreidebarke am Hafen';
+      case 'egypt_roman_envoy':
+        return 'Drücke E: Mit dem Gesandten aus Rom verhandeln';
+      case 'egypt_cedar_trader':
+        return 'Drücke E: Leinen gegen Libanon-Zedernholz tauschen';
       case 'egypt_fish_spot':
         return state.count('fischreuse') > 0 ? 'Drücke E: Fischreuse auswerfen & Nilbarsch fangen' : 'Du benötigst eine geflochtene Fischreuse (Taste C)!';
       case 'egypt_campfire':
@@ -722,39 +857,57 @@ export class WorldScene extends Phaser.Scene {
       case 'egypt_senbi':
         this.interactSenbi();
         break;
-
       case 'egypt_ameni':
         this.interactAmeni();
         break;
-
       case 'egypt_kheti':
         this.interactKheti();
         break;
-
       case 'egypt_nefermaat':
         this.interactNefermaat();
         break;
-
       case 'egypt_ani':
         this.interactAni();
         break;
-
       case 'egypt_hemiunu':
         this.interactHemiunu();
         break;
-
       case 'egypt_baki':
         this.interactBaki();
         break;
-
       case 'egypt_nilometer':
         this.interactNilometer();
         break;
-
       case 'egypt_palm':
         this.interactPalm(n);
         break;
-
+      case 'egypt_mud':
+        this.interactMud(n);
+        break;
+      case 'egypt_quarry':
+        this.interactQuarry(n);
+        break;
+      case 'egypt_timber':
+        this.interactTimber(n);
+        break;
+      case 'egypt_sledge_ramp':
+        this.interactSledgeRamp();
+        break;
+      case 'egypt_pyramid':
+        this.interactPyramid();
+        break;
+      case 'egypt_sphinx':
+        this.interactSphinx();
+        break;
+      case 'egypt_cargo_barge':
+        this.interactCargoBarge();
+        break;
+      case 'egypt_roman_envoy':
+        this.interactRomanEnvoy();
+        break;
+      case 'egypt_cedar_trader':
+        this.interactCedarTrader();
+        break;
       case 'egypt_papyrus':
         state.add('papyrus_staengel', 1);
         state.bump('cut_papyrus', 1);
@@ -763,16 +916,8 @@ export class WorldScene extends Phaser.Scene {
         n.readyAt = Date.now() + REGROW_MS;
         n.sprite.setAlpha(0.35);
         if (n.label) n.label.el.style.opacity = '0.35';
-
-        // Kapitel-1-Questfortschritt (3x Papyrus)
-        if (state.chapter === 1 && state.quest === 1 && state.count('papyrus_staengel') >= 3) {
-          state.quest = 2;
-          sfx.quest();
-          state.emit('toast', 'Ziel erreicht: Genug Schilf gesammelt! Finde nun Stöcke und Kiesel.');
-        }
         state.persist();
         break;
-
       case 'egypt_stick':
         state.add('stock', 1);
         state.bump('found_sticks', 1);
@@ -781,16 +926,8 @@ export class WorldScene extends Phaser.Scene {
         n.readyAt = Date.now() + REGROW_MS;
         n.sprite.setAlpha(0.35);
         if (n.label) n.label.el.style.opacity = '0.35';
-
-        // Kapitel-1-Questfortschritt (2x Stöcke & 2x Kiesel)
-        if (state.chapter === 1 && state.quest === 2 && state.count('stock') >= 2 && state.count('stein') >= 2) {
-          state.quest = 3;
-          sfx.quest();
-          state.emit('toast', 'Ziel erreicht! Öffne Handwerk mit Taste C & flechte die Fischreuse.');
-        }
         state.persist();
         break;
-
       case 'egypt_pebble':
         state.add('stein', 1);
         state.bump('found_stones', 1);
@@ -799,16 +936,8 @@ export class WorldScene extends Phaser.Scene {
         n.readyAt = Date.now() + REGROW_MS;
         n.sprite.setAlpha(0.35);
         if (n.label) n.label.el.style.opacity = '0.35';
-
-        // Kapitel-1-Questfortschritt (2x Stöcke & 2x Kiesel)
-        if (state.chapter === 1 && state.quest === 2 && state.count('stock') >= 2 && state.count('stein') >= 2) {
-          state.quest = 3;
-          sfx.quest();
-          state.emit('toast', 'Ziel erreicht! Öffne Handwerk mit Taste C & flechte die Fischreuse.');
-        }
         state.persist();
         break;
-
       case 'egypt_fish_spot':
         if (state.count('fischreuse') <= 0) {
           state.openDialog({
@@ -819,53 +948,248 @@ export class WorldScene extends Phaser.Scene {
           });
           return;
         }
-
         sfx.pickup();
         state.add('nilbarsch', 1);
         state.bump('caught_fish', 1);
         state.unlockLexicon('nil');
         state.emit('toast', 'Fischfang erfolgreich: +1 Frischer Nilbarsch!');
-
-        // Kapitel-1-Questfortschritt (Fisch fangen)
-        if (state.chapter === 1 && state.quest === 4) {
-          state.quest = 5;
-          sfx.quest();
-          state.emit('toast', 'Ziel erreicht! Brate den Nilbarsch nun am knisternden Lagerfeuer.');
-        }
         state.persist();
         break;
-
       case 'egypt_campfire':
         if (state.count('nilbarsch') > 0) {
           state.add('nilbarsch', -1);
           state.add('cooked_fish', 1);
           sfx.craft();
           state.emit('toast', 'Knusprig gebraten: +1 Gebratener Nilbarsch!');
-
-          // Kapitel-1-Questfortschritt (Fisch braten)
-          if (state.chapter === 1 && state.quest === 5) {
-            state.quest = 6;
-            sfx.quest();
-            state.emit('toast', 'Ziel erreicht! Sprich nun mit Fischer Senbi zur Wissensprüfung.');
-          }
           state.persist();
         } else {
           state.emit('toast', 'Das Feuer knistert warm. Bring frischen Fisch zum Braten mit!');
         }
         break;
-
       case 'plot':
         this.interactPlot(n);
         break;
-
       case 'build_site':
         this.interactBuilding(n);
         break;
-
       default:
         state.emit('toast', 'Ein interessanter Ort am Nil.');
         break;
     }
+  }
+
+  private interactMud(n: Node): void {
+    state.add('nilschlamm', 1);
+    state.bump('dug_mud', 1);
+    sfx.pickup();
+    state.unlockLexicon('kemet');
+    state.emit('toast', '+1 Fruchtbarer Nilschlamm ausgegraben!');
+    n.readyAt = Date.now() + 15_000;
+    n.sprite.setAlpha(0.35);
+    if (n.label) n.label.el.style.opacity = '0.35';
+    state.persist();
+  }
+
+  private interactQuarry(n: Node): void {
+    if (state.chapter < 5) {
+      state.emit('toast', 'Der Tura-Steinbruch wird erst im Pyramidenzeitalter (Kapitel 5) erschlossen.');
+      return;
+    }
+    state.add('kalkstein', 1);
+    state.bump('kalkstein_mined', 1);
+    sfx.craft();
+    state.unlockLexicon('pyramiden');
+    state.emit('toast', '+1 Tura-Kalksteinquader gebrochen!');
+    n.readyAt = Date.now() + 15_000;
+    n.sprite.setAlpha(0.35);
+    if (n.label) n.label.el.style.opacity = '0.35';
+    state.persist();
+  }
+
+  private interactTimber(n: Node): void {
+    if (state.chapter < 5) {
+      state.emit('toast', 'Schwere Akazienstämme für Baufahrzeuge werden in Kapitel 5 benötigt.');
+      return;
+    }
+    state.add('stock', 2);
+    state.bump('timber_chopped', 1);
+    sfx.craft();
+    state.emit('toast', '+2 Bauholz & Rollbalken geschlagen!');
+    n.readyAt = Date.now() + 15_000;
+    n.sprite.setAlpha(0.35);
+    if (n.label) n.label.el.style.opacity = '0.35';
+    state.persist();
+  }
+
+  private interactSledgeRamp(): void {
+    if (state.chapter !== 5 || state.quest !== 4) {
+      state.openDialog({
+        speaker: 'Baustellenrampe der Großen Pyramide',
+        nodes: [
+          { text: 'Auf dieser geneigten Erdrampe ziehen Kolonnen freier Arbeiter tonnenschwere Kalksteinblöcke auf Holzschlitten empor.' },
+          { text: 'Ein Arbeiter gießt Wasser vor die Kufen: Der nasse Wüstensand halbiert die Reibung und spart die Kraft von Dutzenden Männern!' },
+        ],
+      });
+      return;
+    }
+    if (state.count('wasser') <= 0) {
+      state.emit('toast', 'Du benötigst einen Krug Nilwasser zum Befeuchten der Kufenbahn!');
+      return;
+    }
+    state.add('wasser', -1);
+    state.bump('ramp_watered', 1);
+    sfx.craft();
+    state.openDialog({
+      speaker: 'Baustellenrampe der Cheops-Pyramide',
+      nodes: [
+        { text: '💧 <strong>Gleitbahn befeuchtet!</strong>\n\nDas Schlammwasser verringert die Reibung der Holzschlitten drastisch. Mit vereinten Kräften gleiten die 2,5-Tonnen-Quader zügig bergan!' },
+      ],
+    });
+    state.persist();
+  }
+
+  private interactPyramid(): void {
+    if (state.chapter === 5 && state.quest === 5) {
+      if (state.count('kalkstein') <= 0) {
+        state.emit('toast', 'Bringe einen polierten Tura-Kalksteinquader als Deckstein mit!');
+        return;
+      }
+      state.add('kalkstein', -1);
+      state.bump('pyramidion_delivered', 1);
+      sfx.fanfare();
+      state.openDialog({
+        speaker: 'Horizont des Cheops – Große Pyramide',
+        nodes: [
+          { text: '🔺 <strong>Der Schlussstein ist gesetzt!</strong>\n\nDas vergoldete Pyramidion glänzt im Morgenlicht auf 146 Metern Höhe. Über 2,3 Millionen Blöcke stehen in geometrischer Vollkommenheit!' },
+          { text: 'Ein ewiges Monument des Pharao und der Baukunst freier Menschen.' },
+        ],
+      });
+      state.persist();
+      return;
+    }
+    state.openDialog({
+      speaker: 'Die Große Pyramide von Gizeh',
+      nodes: [
+        { text: 'Erbaut für Pharao Cheops (ca. 2.550 v. Chr.). Mit 146 Metern Höhe für fast vier Jahrtausende das höchste Bauwerk der Erde.' },
+      ],
+    });
+  }
+
+  private interactSphinx(): void {
+    if (state.chapter === 5 && state.quest === 6) {
+      state.bump('sphinx_visited', 1);
+      sfx.quest();
+      state.openDialog({
+        speaker: 'Die Große Sphinx von Gizeh',
+        nodes: [
+          { text: '🦁 Du trittst vor die 73 Meter lange Kolossalstatue mit dem Körper eines Löwen und dem Antlitz des Pharao Chephren.' },
+          { text: 'Ihre Achse muss exakt gen Osten ausgerichtet sein, damit ihr Blick am Tag der Tagundnachtgleiche die aufgehende Morgensonne trifft!' },
+        ],
+      });
+      state.persist();
+      return;
+    }
+    if (state.chapter === 5 && state.quest === 7) {
+      state.bump('sphinx_aligned', 1);
+      sfx.fanfare();
+      state.openDialog({
+        speaker: 'Die Große Sphinx von Gizeh',
+        nodes: [
+          { text: '☀️ <strong>Ausrichtung vollendet!</strong>\n\nDer steinerne Wächter blickt nun exakt 90° gen Osten. Er hütet die Königsgräber und trotzt den Sandstürmen der Jahrtausende.' },
+        ],
+      });
+      state.persist();
+      return;
+    }
+    state.openDialog({
+      speaker: 'Die Große Sphinx von Gizeh',
+      nodes: [
+        { text: '„Wächter des Horizonts“ – Halb Mensch, halb Löwe schützt die Sphinx die heilige Nekropole von Gizeh.' },
+      ],
+    });
+  }
+
+  private interactCargoBarge(): void {
+    if (state.chapter === 6 && state.quest === 5) {
+      if (state.count('getreidesack') < 3) {
+        state.emit('toast', `Du hast erst ${state.count('getreidesack')}/3 Getreidesäcke! Schnüre weitere im Handwerksmenü (Taste C).`);
+        return;
+      }
+      state.add('getreidesack', -3);
+      state.bump('barge_loaded', 1);
+      sfx.fanfare();
+      state.openDialog({
+        speaker: 'Nilhafen – Römische Frachtbarke',
+        nodes: [
+          { text: '⛵ <strong>Die Frachtbarke ist beladen!</strong>\n\nDrei prall gefüllte, königlich versiegelte Getreidesäcke lagern im Schiffsbauch.' },
+          { text: 'Der Nilhafen verbindet Ägypten über Alexandria mit Rom. Sprich nun mit dem römischen Gesandten am Hafenpier!' },
+        ],
+      });
+      state.persist();
+      return;
+    }
+    state.openDialog({
+      speaker: 'Große Nil-Frachtbarke',
+      nodes: [
+        { text: 'Diese schweren Holzschiffe transportieren Getreide, Steine und Weihrauch nilabwärts bis ans Mittelmeer.' },
+      ],
+    });
+  }
+
+  private interactRomanEnvoy(): void {
+    if (state.chapter === 6 && state.quest === 6) {
+      state.bump('treaty_signed', 1);
+      sfx.quest();
+      state.openDialog({
+        speaker: 'Senator Cornelius – Gesandter aus Rom',
+        nodes: [
+          { text: 'Ave, hoher Baumeister! Der Senat und Kaiser Augustus danken für die pünktliche Getreidelieferung aus Alexandria.' },
+          { text: '„Ohne das ägyptische Korn würde die Millionenstadt Rom verhungern.“ Ägypten ist wahrlich die unersetzliche Kornkammer unseres Reiches!' },
+          { text: 'Der Vertrag ist besiegelt! Tritt nun vor Hafenmeister Baki, um deine meisterhafte Krönungsurkunde zu empfangen!' },
+        ],
+      });
+      state.persist();
+      return;
+    }
+    state.openDialog({
+      speaker: 'Senator Cornelius – Gesandter aus Rom',
+      nodes: [
+        { text: 'Rom blickt mit Ehrfurcht auf die Jahrtausende alte Kultur am Nil. Möge der Handel zwischen Kemet und Rom ewig blühen!' },
+      ],
+    });
+  }
+
+  private interactCedarTrader(): void {
+    if (state.chapter === 6 && state.quest === 2) {
+      if (state.count('leinen') <= 0) {
+        state.openDialog({
+          speaker: 'Phönizischer Fernhändler aus Byblos',
+          nodes: [
+            { text: 'Salam! Unsere Schiffe brachten duftendes Zedernholz aus den Bergen des Libanon.' },
+            { text: 'Wir tauschen 1 Ballen feines weißes ägyptisches Leinen gegen 2 Stämme Zedernholz!' },
+          ],
+        });
+        return;
+      }
+      state.add('leinen', -1);
+      state.add('zedernholz', 2);
+      state.bump('trade_zedernholz', 1);
+      sfx.craft();
+      state.openDialog({
+        speaker: 'Phönizischer Fernhändler aus Byblos',
+        nodes: [
+          { text: '🤝 <strong>Handel besiegelt!</strong>\n\n+2 Libanon-Zedernholz erhalten! Zedernholz ist harzreich und fault im Nilwasser nicht – unentbehrlich für die königliche Flotte.' },
+        ],
+      });
+      state.persist();
+      return;
+    }
+    state.openDialog({
+      speaker: 'Phönizischer Fernhändler',
+      nodes: [
+        { text: 'Wir handeln mit Zedernholz, Purpur und Kupfer aus Byblos und Tyros.' },
+      ],
+    });
   }
 
   private interactNilometer(): void {
@@ -878,14 +1202,6 @@ export class WorldScene extends Phaser.Scene {
         { text: '📏 Du liest die eingemeißelten Ellen am Nilometer ab:\n\n„16 Ellen Pegelhöhe!“\n\nEin Jubel geht durch die Felder: Es ist die ideale Höhe für die gesegnete Nilschwemme (Akhet)!' },
         { text: 'Der dunkle Mineralschlamm aus den Bergen Äthiopiens lagert sich auf den Ufern ab. Nun müssen die Schöpfwerke vorbereitet werden!' },
       ],
-      onDone: () => {
-        if (state.chapter === 2 && state.quest === 1) {
-          state.quest = 2;
-          sfx.quest();
-          state.emit('toast', 'Ziel erreicht! Zimmere nun den Schaduf-Hebelarm (Taste C).');
-          state.persist();
-        }
-      },
     });
   }
 
@@ -899,12 +1215,6 @@ export class WorldScene extends Phaser.Scene {
     sfx.pickup();
     n.readyAt = Date.now() + REGROW_MS;
     state.emit('toast', `+1 Süße Dattel gepflückt! (${state.count('datteln')}/3)`);
-
-    if (state.count('datteln') >= 3) {
-      state.quest = 8;
-      sfx.quest();
-      state.emit('toast', 'Genug Datteln gesammelt! Schneide nun den reifen Emmer auf dem Feld mit der Sichel.');
-    }
     state.persist();
   }
 
@@ -938,7 +1248,6 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
 
-    // Kapitel 2 aktiv:
     if (q === 0) {
       state.openDialog({
         speaker: 'Feldhüter Ameni',
@@ -955,7 +1264,7 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
 
-    if (q === 8 || state.isReadyForQuiz()) {
+    if (q === 9 || state.isReadyForQuiz()) {
       state.openDialog({
         speaker: 'Feldhüter Ameni – Wissensprüfung',
         nodes: ch.quiz as any,
@@ -998,7 +1307,6 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
 
-    // Aktuelle Aufgaben-Erinnerung
     const curHint = ch.hints[q] || ch.quests[q] || 'Erfülle deine aktuelle Aufgabe auf den Feldern!';
     state.openDialog({
       speaker: 'Feldhüter Ameni',
@@ -1041,7 +1349,6 @@ export class WorldScene extends Phaser.Scene {
           state.persist();
           state.emit('chapterDone', 1);
 
-          // Feierlicher Übergangsdialog zu Kapitel 2
           state.openDialog({
             speaker: 'Fischer Senbi – Kapitel 1 gemeistert!',
             nodes: [
@@ -1108,8 +1415,8 @@ export class WorldScene extends Phaser.Scene {
         speaker: 'Wesir Nefermaat',
         nodes: [
           { text: 'Sei gegrüßt im Namen des Pharao! Ein Staat entsteht nicht von allein: Tausende Menschen müssen ernährt, Deiche gepflegt und Vorräte gelagert werden.' },
-          { text: 'Als oberster Wesir organisiere ich die Arbeit. Wir brauchen sonnengetrocknete Lehmziegel für Kornspeicher und frisches Brot für unsere Arbeiter!' },
-          { text: 'Errichte zuerst die königliche Lehmziegelei am Wüstenrand (drücke E am Bauplatz).' },
+          { text: 'Als oberster Wesir organisiere ich die Arbeit. Wir brauchen sonnengetrocknete Ziegel für Kornspeicher und frisches Brot für unsere Arbeiter!' },
+          { text: 'Grabe zuerst fruchtbaren dunklen Nilschlamm am Flussufer aus (Taste E).' },
         ],
         onDone: () => {
           state.quest = 1;
@@ -1119,7 +1426,7 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
 
-    if (q === 6 || state.isReadyForQuiz()) {
+    if (q === 8 || state.isReadyForQuiz()) {
       state.openDialog({
         speaker: 'Wesir Nefermaat – Wissensprüfung',
         nodes: ch.quiz as any,
@@ -1191,7 +1498,7 @@ export class WorldScene extends Phaser.Scene {
       state.openDialog({
         speaker: 'Ober-Schreiber Ani',
         nodes: [
-          { text: 'Sei willkommen im Haus des Lebens! „Wer schreibt, der bleibt“ – Schreiber sind die mächtigsten Männer Ägyptens neben dem Wesir.' },
+          { text: 'Sei willkommen im Haus des Lebens! „Wer schreibt, der bleibt“ – Schreiber sind die angesehensten Männer Ägyptens.' },
           { text: 'Wir zeichnen heilige Hieroglyphen, berechnen Steuern und bewahren das Totenbuch für das Gericht des Osiris.' },
           { text: 'Errichte zuerst das Schreiberhaus (Haus des Lebens) am Bauplatz (drücke E).' },
         ],
@@ -1203,7 +1510,7 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
 
-    if (q === 6 || state.isReadyForQuiz()) {
+    if (q === 8 || state.isReadyForQuiz()) {
       state.openDialog({
         speaker: 'Ober-Schreiber Ani – Wissensprüfung',
         nodes: ch.quiz as any,
@@ -1288,7 +1595,7 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
 
-    if (q === 6 || state.isReadyForQuiz()) {
+    if (q === 8 || state.isReadyForQuiz()) {
       state.openDialog({
         speaker: 'Baumeister Hemiunu – Wissensprüfung',
         nodes: ch.quiz as any,
@@ -1354,7 +1661,7 @@ export class WorldScene extends Phaser.Scene {
         nodes: [
           { text: 'Willkommen am Nilhafen von Kemet! Unsere Schiffe segeln nilaufwärts nach Nubien für Gold und über das Meer nach Byblos für Zedernholz.' },
           { text: 'Im reinen Tauschhandel sichern wir dem Reich Weihrauch, Metalle und Kunstschätze.' },
-          { text: 'Beginne damit, 3× Weihrauchharz aus Punt auf dem Basar einzutauschen (Taste H).' },
+          { text: 'Beginne damit, Weihrauchharz aus Punt auf dem Basar einzutauschen (Taste H).' },
         ],
         onDone: () => {
           state.quest = 1;
@@ -1364,7 +1671,7 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
 
-    if (q === 6 || state.isReadyForQuiz()) {
+    if (q === 7 || state.isReadyForQuiz()) {
       state.openDialog({
         speaker: 'Hafenmeister Baki – Abschluss-Prüfung',
         nodes: ch.quiz as any,
@@ -1430,15 +1737,9 @@ export class WorldScene extends Phaser.Scene {
       sfx.craft();
       state.bump('seeded_plot', 1);
       state.emit('toast', 'Emmer-Saat in den feuchten Nilschlamm gesät!');
-
-      if (state.chapter === 2 && state.quest === 5) {
-        state.quest = 6;
-        sfx.quest();
-        state.emit('toast', 'Ziel erreicht! Bewässere nun das Saatbeet mit geschöpftem Nilwasser.');
-      }
     } else if (p.stage === 'seeded') {
       if (state.count('wasser') <= 0) {
-        state.emit('toast', 'Schöpfe erst Nilwasser am Ufer oder Schaduf!');
+        state.emit('toast', 'Schöpfe erst Nilwasser am Schaduf oder Ufer!');
         return;
       }
       state.add('wasser', -1);
@@ -1447,13 +1748,7 @@ export class WorldScene extends Phaser.Scene {
       this.refreshPlotVisual(n);
       sfx.craft();
       state.bump('watered_plot', 1);
-      state.emit('toast', 'Feld mit Nilwasser getränkt!');
-
-      if (state.chapter === 2 && state.quest === 6) {
-        state.quest = 7;
-        sfx.quest();
-        state.emit('toast', 'Ziel erreicht! Pflücke während des Wachstums 3× Datteln von den Oasenpalmen.');
-      }
+      state.emit('toast', 'Feld mit geschöpftem Nilwasser getränkt!');
     } else if (p.stage === 'ripe') {
       p.stage = 'raw';
       if (n.cropSprite) {
@@ -1466,11 +1761,6 @@ export class WorldScene extends Phaser.Scene {
       state.unlockLexicon('emmer');
       sfx.pickup();
       state.emit('toast', 'Ernte eingebracht: +3 Emmer-Getreide!');
-
-      if (state.chapter === 2 && state.quest === 8) {
-        sfx.quest();
-        state.emit('toast', 'Ziel erreicht! Tritt vor Feldhüter Ameni zur Prüfung über die Jahreszeiten.');
-      }
     }
     state.persist();
   }
@@ -1480,18 +1770,30 @@ export class WorldScene extends Phaser.Scene {
     if (!b) return;
     if (state.hasBuilding(b.id)) {
       if (b.id === 'schaduf') {
-        // Wasser am Schaduf schöpfen!
         state.add('wasser', 1);
         state.bump('schaduf_water', 1);
         sfx.pickup();
         state.emit('toast', '+1 Krug frisches Nilwasser geschöpft!');
-
-        if (state.chapter === 2 && state.quest === 4) {
-          state.quest = 5;
-          sfx.quest();
-          state.emit('toast', 'Ziel erreicht! Lockere nun ein Ackerbeet auf und säe Emmer.');
-        }
         state.persist();
+      } else if (b.id === 'speicher' && state.chapter === 4 && state.quest === 4) {
+        if (state.count('papyrusrolle') > 0 && state.count('pinsel_tinte') > 0) {
+          state.bump('tax_recorded', 1);
+          sfx.craft();
+          state.openDialog({
+            speaker: 'Königlicher Kornspeicher – Steuerliste',
+            nodes: [
+              { text: '📜 <strong>Steuererhebung festgehalten!</strong>\n\nMit Rußtinte und Binsenpinsel notierst du auf Papyrus:\n„100 Scheffel Emmer, 40 Krüge Henket-Bier, 12 Rinder.“\n\nDie staatliche Buchführung sichert die Versorgung aller Arbeiter!' },
+            ],
+          });
+          state.persist();
+        } else {
+          state.openDialog({
+            speaker: 'Königlicher Kornspeicher',
+            nodes: [
+              { text: 'Um die Getreidesteuern aufzuzeichnen, benötigst du eine Papyrusrolle und ein Binsenpinsel-Schreibset (Taste C im Handwerk)!' },
+            ],
+          });
+        }
       } else {
         state.emit('toast', `Hier steht bereits: ${b.name}`);
       }
@@ -1499,7 +1801,7 @@ export class WorldScene extends Phaser.Scene {
     }
 
     if (!state.canAffordBuilding(b)) {
-      const costStr = Object.entries(b.cost).map(([id, num]) => `${num}× ${id}`).join(', ');
+      const costStr = Object.entries(state.getBuildingCost(b)).map(([id, num]) => `${num}× ${id}`).join(', ');
       state.openDialog({
         speaker: `Bauplatz: ${b.name}`,
         nodes: [{ text: `${b.desc}\n\nBenötigte Baumaterialien:\n${costStr}` }],
@@ -1510,29 +1812,10 @@ export class WorldScene extends Phaser.Scene {
     state.build(b);
     this.renderBuiltEgyptBuilding(n);
     state.emit('toast', `Errichtet: ${b.name}!`);
-
-    if (state.chapter === 2 && state.quest === 3 && b.id === 'schaduf') {
-      state.quest = 4;
-      sfx.quest();
-      state.emit('toast', 'Schaduf einsatzbereit! Schöpfe nun Nilwasser mit dem Hebelarm (Taste E).');
-      state.persist();
-    }
+    state.persist();
   }
 
   private onCraft(): void {
-    // Wenn in Kapitel 1 die Fischreuse hergestellt wurde
-    if (state.chapter === 1 && state.quest === 3 && state.count('fischreuse') > 0) {
-      state.quest = 4;
-      sfx.quest();
-      state.emit('toast', 'Fischreuse fertig! Gehe zum Fischgrund am Wasser und wirf sie aus.');
-    }
-
-    // Wenn in Kapitel 2 der Schaduf-Hebelarm gezimmert wurde
-    if (state.chapter === 2 && state.quest === 2 && state.count('schaduf_teil') > 0) {
-      state.quest = 3;
-      sfx.quest();
-      state.emit('toast', 'Schaduf-Hebelarm fertig! Errichte nun das Schaduf am Bauplatz am Nilufer.');
-    }
     this.persist();
   }
 
@@ -1542,7 +1825,15 @@ export class WorldScene extends Phaser.Scene {
     const chDef = state.currentChapterDef;
 
     if (q === 0 || state.isReadyForQuiz() || state.isChapterComplete()) {
-      const mentorKind = ch === 1 ? 'egypt_senbi' : ch === 2 ? 'egypt_ameni' : 'egypt_senbi';
+      const mentorKinds: Record<number, Kind> = {
+        1: 'egypt_senbi',
+        2: 'egypt_ameni',
+        3: 'egypt_nefermaat',
+        4: 'egypt_ani',
+        5: 'egypt_hemiunu',
+        6: 'egypt_baki',
+      };
+      const mentorKind = mentorKinds[ch] || 'egypt_senbi';
       const mentorNode = this.nodes.find((n) => n.kind === mentorKind);
       if (mentorNode) {
         this.setCompassTarget(mentorNode, chDef.mentor);
@@ -1562,9 +1853,44 @@ export class WorldScene extends Phaser.Scene {
       else if (q === 2) state.compassText = '🔨 Drücke C -> Schaduf-Hebelarm zimmern!';
       else if (q === 3) this.setCompassTargetByBuilding('schaduf', 'Bauplatz Schaduf');
       else if (q === 4) this.setCompassTargetByBuilding('schaduf', 'Schaduf-Schöpfwerk');
-      else if (q === 5 || q === 6 || q === 8) this.setCompassTargetByKind('plot', 'Ackerbeete');
+      else if (q === 5 || q === 6) this.setCompassTargetByKind('plot', 'Ackerbeete');
       else if (q === 7) this.setCompassTargetByKind('egypt_palm', 'Dattelpalme');
+      else if (q === 8) this.setCompassTargetByKind('plot', 'Reifes Emmerfeld');
       else this.setCompassTargetByKind('egypt_ameni', 'Feldhüter Ameni');
+    } else if (ch === 3) {
+      if (q === 1) this.setCompassTargetByKind('egypt_mud', 'Fruchtbarer Nilschlamm am Flussufer');
+      else if (q === 2) this.setCompassTargetByBuilding('ziegelei', 'Bauplatz Königliche Lehmziegelei');
+      else if (q === 3) state.compassText = '🔨 Drücke C -> 3× Lehmziegel streichen!';
+      else if (q === 4) this.setCompassTargetByBuilding('speicher', 'Bauplatz Königlicher Kornspeicher');
+      else if (q === 5) state.compassText = '🔨 Drücke C -> Vorratstopf brennen!';
+      else if (q === 6) state.compassText = '🔨 Drücke C -> Feines Leinentuch weben!';
+      else if (q === 7) state.compassText = '🔨 Drücke C -> 2× Brot & 1× Bier herstellen!';
+      else this.setCompassTargetByKind('egypt_nefermaat', 'Wesir Nefermaat');
+    } else if (ch === 4) {
+      if (q === 1) this.setCompassTargetByBuilding('schreiberhaus', 'Bauplatz Haus des Lebens');
+      else if (q === 2) state.compassText = '🔨 Drücke C -> Papyrusrolle pressen!';
+      else if (q === 3) state.compassText = '🔨 Drücke C -> Binsenpinsel & Tinte herstellen!';
+      else if (q === 4) this.setCompassTargetByBuilding('speicher', 'Kornspeicher (Steuerliste notieren)');
+      else if (q === 5) this.setCompassTargetByBuilding('wabet', 'Bauplatz Balsamierungswerkstatt');
+      else if (q === 6) state.compassText = '🏺 Basar (Taste H) -> Salz tauschen & Kanope meißeln (C)!';
+      else if (q === 7) state.compassText = '🔨 Drücke C -> Herz-Skarabäus formen!';
+      else this.setCompassTargetByKind('egypt_ani', 'Ober-Schreiber Ani');
+    } else if (ch === 5) {
+      if (q === 1) this.setCompassTargetByBuilding('steinmetz', 'Bauplatz Bauhütte der Großbaustelle');
+      else if (q === 2) this.setCompassTargetByKind('egypt_quarry', 'Tura-Kalksteinbruch');
+      else if (q === 3) this.setCompassTargetByKind('egypt_timber', 'Bauholz & Akazien');
+      else if (q === 4) this.setCompassTargetByKind('egypt_sledge_ramp', 'Baustellenrampe (mit Schlammwasser befeuchten)');
+      else if (q === 5) this.setCompassTargetByKind('egypt_pyramid', 'Große Cheops-Pyramide (Deckstein setzen)');
+      else if (q === 6 || q === 7) this.setCompassTargetByKind('egypt_sphinx', 'Große Sphinx von Gizeh');
+      else this.setCompassTargetByKind('egypt_hemiunu', 'Baumeister Hemiunu');
+    } else if (ch === 6) {
+      if (q === 1) state.compassText = '🏺 Öffne Basar (Taste H) -> Punt-Weihrauch ertauschen!';
+      else if (q === 2) this.setCompassTargetByKind('egypt_cedar_trader', 'Phönizischer Holzhändler am Hafen');
+      else if (q === 3) state.compassText = '🔨 Drücke C -> Goldene Totenmaske schmieden!';
+      else if (q === 4) state.compassText = '🔨 Drücke C -> 3× Getreidesäcke schnüren!';
+      else if (q === 5) this.setCompassTargetByKind('egypt_cargo_barge', 'Römische Frachtbarke am Hafen');
+      else if (q === 6) this.setCompassTargetByKind('egypt_roman_envoy', 'Gesandter aus Rom');
+      else this.setCompassTargetByKind('egypt_baki', 'Hafenmeister Baki');
     } else {
       this.setCompassTargetByKind('egypt_senbi', 'Mentor');
     }
