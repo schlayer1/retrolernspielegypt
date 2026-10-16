@@ -229,6 +229,8 @@ export class WorldScene extends Phaser.Scene {
   private scatterEgyptNature(): void {
     // 1. Fischer Senbis Hütte (48x48 Lehmziegel-Fischerhütte aus desert_houses.png)
     const hut = this.makeObstacle(490, 290, 'desert_houses', 'hut_senbi');
+    // Nur das Fundament (untere 20px) ist eine Kollision, oben kann man vorbeilaufen!
+    hut.body!.setSize(40, 20).setOffset(4, 26);
     hut.setDepth(290);
     this.addLabel(490, 260, '🛖 Fischer Senbis Hütte', '#ffe9b0');
 
@@ -247,16 +249,18 @@ export class WorldScene extends Phaser.Scene {
     // 3b. Antikes Nilboot / Lastkahn am Fischersteg (aus MegaPropsPack)
     const boat = this.makeObstacle(628, 385, 'egypt_boat');
     boat.setDisplaySize(64, 52);
-    boat.body!.setSize(48, 24).setOffset(8, 14);
+    boat.body!.setSize(44, 20).setOffset(10, 16);
     boat.setDepth(370);
     this.addLabel(628, 355, '⛵ Papyrus-Lastkahn', '#93c5fd');
 
-    // 3c. Antikes Nilometer am Flussufer (Pegelmesser für die Nilschwemme)
-    const nilo = this.addNode('egypt_nilometer', 'nilometer_prop', undefined, 580, 275);
-    nilo.sprite.setDepth(275);
-    nilo.label = this.addLabel(580, 250, '📏 Nilometer (E)', '#67e8f9');
+    // 3c. Antikes Nilometer am Flussufer (Pegelmesser für die Nilschwemme ab Kap. 2)
+    if (state.chapter >= 2) {
+      const nilo = this.addNode('egypt_nilometer', 'nilometer_prop', undefined, 580, 275);
+      nilo.sprite.setDepth(275);
+      nilo.label = this.addLabel(580, 250, '📏 Nilometer (E)', '#67e8f9');
+    }
 
-    // 4. Echte 16-Bit-Dattelpalmen (Interagierbar zum Dattelpflücken in Kap. 2)
+    // 4. Echte 16-Bit-Dattelpalmen
     const palmPositions = [
       [390, 190],
       [440, 140],
@@ -269,10 +273,10 @@ export class WorldScene extends Phaser.Scene {
     ];
     for (const [px, py] of palmPositions) {
       const p = this.makeObstacle(px, py, 'desert_tileset', 'palm_tree');
-      p.body!.setSize(16, 12).setOffset(16, 50);
+      p.body!.setSize(12, 8).setOffset(18, 54);
       p.setDepth(py + 30);
       const palmNode = this.addNode('egypt_palm', 'desert_tileset', 'palm_tree', px, py);
-      palmNode.sprite.setVisible(false); // Unsichtbarer Interaktions-Trigger direkt vor dem Stamm
+      palmNode.sprite.setVisible(false);
       palmNode.sprite.setPosition(px, py + 16);
     }
 
@@ -286,7 +290,7 @@ export class WorldScene extends Phaser.Scene {
     ];
     for (const [rx, ry] of rockClusters) {
       const r = this.makeObstacle(rx, ry, 'desert_tileset', 'rocks_large');
-      r.body!.setSize(28, 20).setOffset(2, 10);
+      r.body!.setSize(26, 16).setOffset(3, 14);
       r.setDepth(ry);
     }
 
@@ -300,22 +304,22 @@ export class WorldScene extends Phaser.Scene {
     ];
     for (const [px, py] of desertPlants) {
       const p = this.makeObstacle(px, py, 'desert_tileset', 'cactus_tall');
-      p.body!.setSize(12, 12).setOffset(2, 34);
+      p.body!.setSize(10, 10).setOffset(3, 36);
       p.setDepth(py);
     }
 
-    // 7. Monumente in der Ferne (Pyramide & Sphinx)
-    const pyr = this.makeObstacle(140, 100, 'egypt_pyramid');
-    pyr.body!.setSize(200, 130).setOffset(12, 25);
-    pyr.setDepth(100);
-    this.addNode('egypt_pyramid', 'egypt_pyramid', undefined, 140, 140);
-    this.addLabel(140, 40, '🔺 Große Pyramide (Gizeh)', '#fef08a');
+    // 7. Monumente in der Ferne (Pyramide & Sphinx) – erst ab Kapitel 5 (Pyramiden-Epoche)
+    if (state.chapter >= 5) {
+      const pyr = this.makeObstacle(110, 85, 'egypt_pyramid');
+      pyr.body!.setSize(120, 45).setOffset(36, 100);
+      pyr.setDepth(85);
+      this.addLabel(110, 20, '🔺 Große Pyramide (Gizeh)', '#fef08a');
 
-    const sph = this.makeObstacle(200, 230, 'egypt_sphinx');
-    sph.body!.setSize(70, 45).setOffset(5, 15);
-    sph.setDepth(230);
-    this.addNode('egypt_sphinx', 'egypt_sphinx', undefined, 200, 250);
-    this.addLabel(200, 195, '🦁 Große Sphinx von Gizeh', '#fef08a');
+      const sph = this.makeObstacle(190, 260, 'egypt_sphinx');
+      sph.body!.setSize(64, 28).setOffset(8, 30);
+      sph.setDepth(260);
+      this.addLabel(190, 225, '🦁 Große Sphinx von Gizeh', '#fef08a');
+    }
   }
 
   private placeEgyptResources(): void {
@@ -360,44 +364,56 @@ export class WorldScene extends Phaser.Scene {
     senbi.sprite.setDepth(350);
     senbi.label = this.addLabel(530, 325, '🐟 Fischer Senbi (Kap. 1)', '#38bdf8');
 
-    // Weitere Mentoren für nachfolgende Kapitel
-    const ameni = this.addNode('egypt_ameni', 'npc_ameni', 0, 460, 185);
-    ameni.sprite.setDepth(185);
-    ameni.label = this.addLabel(460, 160, '🌾 Feldhüter Ameni (Kap. 2)', '#fde047');
+    // Weitere Mentoren erst ab ihrem jeweiligen Kapitel freischalten!
+    if (state.chapter >= 2) {
+      const ameni = this.addNode('egypt_ameni', 'npc_ameni', 0, 460, 185);
+      ameni.sprite.setDepth(185);
+      ameni.label = this.addLabel(460, 160, '🌾 Feldhüter Ameni (Kap. 2)', '#fde047');
 
-    const kheti = this.addNode('egypt_kheti', 'npc_kheti', 0, 520, 185);
-    kheti.sprite.setDepth(185);
-    kheti.label = this.addLabel(520, 160, '👩‍🌾 Bäuerin Kheti', '#86efac');
+      const kheti = this.addNode('egypt_kheti', 'npc_kheti', 0, 520, 185);
+      kheti.sprite.setDepth(185);
+      kheti.label = this.addLabel(520, 160, '👩‍🌾 Bäuerin Kheti', '#86efac');
 
-    // Nil-Nutztiere (Pflugochse & Trampelziege zur Saat)
-    const ox = this.physics.add.sprite(410, 260, 'animal_cow', 0);
-    ox.setDepth(260);
-    ox.anims.play('idle-cow', true);
-    this.obstacles.add(ox);
+      // Nil-Nutztiere (Pflugochse & Trampelziege zur Saat)
+      const ox = this.physics.add.sprite(410, 260, 'animal_cow', 0);
+      ox.setDepth(260);
+      ox.anims.play('idle-cow', true);
+      this.obstacles.add(ox);
 
-    const goat1 = this.physics.add.sprite(430, 290, 'animal_goat', 0);
-    goat1.setDepth(290);
-    goat1.anims.play('idle-goat', true);
-    this.obstacles.add(goat1);
+      const goat1 = this.physics.add.sprite(430, 290, 'animal_goat', 0);
+      goat1.setDepth(290);
+      goat1.anims.play('idle-goat', true);
+      this.obstacles.add(goat1);
+    }
 
-    const wesir = this.addNode('egypt_nefermaat', 'npc_nefermaat', 0, 360, 200);
-    wesir.sprite.setDepth(200);
-    wesir.label = this.addLabel(360, 175, '👑 Wesir Nefermaat (Kap. 3)', '#f59e0b');
+    if (state.chapter >= 3) {
+      const wesir = this.addNode('egypt_nefermaat', 'npc_nefermaat', 0, 360, 200);
+      wesir.sprite.setDepth(200);
+      wesir.label = this.addLabel(360, 175, '👑 Wesir Nefermaat (Kap. 3)', '#f59e0b');
+    }
 
-    const ani = this.addNode('egypt_ani', 'npc_ani', 0, 260, 160);
-    ani.sprite.setDepth(160);
-    ani.label = this.addLabel(260, 135, '📜 Ober-Schreiber Ani (Kap. 4)', '#a78bfa');
+    if (state.chapter >= 4) {
+      const ani = this.addNode('egypt_ani', 'npc_ani', 0, 260, 160);
+      ani.sprite.setDepth(160);
+      ani.label = this.addLabel(260, 135, '📜 Ober-Schreiber Ani (Kap. 4)', '#a78bfa');
+    }
 
-    const hemi = this.addNode('egypt_hemiunu', 'npc_hemiunu', 0, 150, 130);
-    hemi.sprite.setDepth(130);
-    hemi.label = this.addLabel(150, 105, '📐 Baumeister Hemiunu (Kap. 5)', '#fef08a');
+    if (state.chapter >= 5) {
+      const hemi = this.addNode('egypt_hemiunu', 'npc_hemiunu', 0, 130, 205);
+      hemi.sprite.setDepth(205);
+      hemi.label = this.addLabel(130, 180, '📐 Baumeister Hemiunu (Kap. 5)', '#fef08a');
+    }
 
-    const baki = this.addNode('egypt_baki', 'npc_baki', 0, 560, 480);
-    baki.sprite.setDepth(480);
-    baki.label = this.addLabel(560, 455, '⚓ Hafenmeister Baki (Kap. 6)', '#60a5fa');
+    if (state.chapter >= 6) {
+      const baki = this.addNode('egypt_baki', 'npc_baki', 0, 560, 480);
+      baki.sprite.setDepth(480);
+      baki.label = this.addLabel(560, 455, '⚓ Hafenmeister Baki (Kap. 6)', '#60a5fa');
+    }
 
-    // Bauplätze
+    // Bauplätze: Nur anzeigen, wenn das Kapitel erreicht ist!
     for (const b of state.buildingsData) {
+      if (state.chapter < b.unlockedInChapter) continue;
+
       const node = this.addNode('build_site', 'farm', 'sign_build', b.x, b.y);
       node.buildingDef = b;
       node.sprite.setDepth(b.y);
@@ -408,14 +424,16 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    // Ackerbeete am Nilufer
-    for (let i = 0; i < 6; i++) {
-      const px = 430 + (i % 3) * 32;
-      const py = 230 + Math.floor(i / 3) * 32;
-      const node = this.addNode('plot', 'farm', 'soil_raw', px, py);
-      node.plotId = i;
-      node.sprite.setDepth(py);
-      this.refreshPlotVisual(node);
+    // Ackerbeete am Nilufer erst ab Kapitel 2 (Nilschwemme & Ackerbau)
+    if (state.chapter >= 2) {
+      for (let i = 0; i < 6; i++) {
+        const px = 430 + (i % 3) * 32;
+        const py = 230 + Math.floor(i / 3) * 32;
+        const node = this.addNode('plot', 'farm', 'soil_raw', px, py);
+        node.plotId = i;
+        node.sprite.setDepth(py);
+        this.refreshPlotVisual(node);
+      }
     }
   }
 
@@ -520,11 +538,12 @@ export class WorldScene extends Phaser.Scene {
     }
 
     const gPrefix = state.playerGender === 'female' ? 'egypt-female' : 'egypt-male';
+    const currentSpeed = state.playerRole === 'fisher' && this.player.x > 380 ? SPEED * 1.2 : SPEED;
 
     if (vx !== 0 || vy !== 0) {
       const len = Math.hypot(vx, vy);
-      this.player.setVelocity((vx / len) * SPEED, (vy / len) * SPEED);
-      state.distanceMeters += (SPEED * (delta / 1000)) / 8;
+      this.player.setVelocity((vx / len) * currentSpeed, (vy / len) * currentSpeed);
+      state.distanceMeters += (currentSpeed * (delta / 1000)) / 8;
 
       if (Math.abs(vx) > Math.abs(vy)) {
         this.facing = vx > 0 ? 'right' : 'left';

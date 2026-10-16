@@ -20,10 +20,47 @@ import {
   EgyptRecipe,
   EgyptTradeOffer,
 } from '../data/items';
-import { FarmPlotState, PlayerGender, SaveData, SaveManager } from './SaveManager';
+import { FarmPlotState, PlayerGender, PlayerRole, SaveData, SaveManager } from './SaveManager';
+export type { PlayerRole };
 
 export const DAY_MS = 240_000;
 export const CROP_MS = 18_000;
+
+export interface EgyptRoleDef {
+  id: PlayerRole;
+  name: string;
+  icon: string;
+  title: string;
+  desc: string;
+  perk: string;
+}
+
+export const EGYPT_ROLES: Record<PlayerRole, EgyptRoleDef> = {
+  fisher: {
+    id: 'fisher',
+    name: 'Fischer / Fischerin',
+    icon: '🎣',
+    title: 'Meister/in des Nils',
+    desc: 'Vertraut mit den Strömungen, Schilfgürteln und Oasenfrüchten.',
+    perk: '+20% Lauftempo, 2× Ertrag beim Fischen & Dattelernten, Nahrung sinkt 35% langsamer.',
+  },
+  scribe: {
+    id: 'scribe',
+    name: 'Schreiber / Schreiberin',
+    icon: '📜',
+    title: 'Gelehrte/r der Hieroglyphen',
+    desc: 'Beherrscht Papyrus, Tinte und die heiligen Zeichen der Götter.',
+    perk: '+50% Wissenszuwachs, schaltet Zusatzwissen im Lexikon sofort frei.',
+  },
+  builder: {
+    id: 'builder',
+    name: 'Baumeister / Handwerkerin',
+    icon: '🏗️',
+    title: 'Erbauer/in der Monumente',
+    desc: 'Geschickt im Umgang mit Hebeln, Schlammziegeln und Kalksteinquadern.',
+    perk: '30% Materialrabatt auf Bauten (Schaduf, Ziegel, Speicher), Extra-Ertrag beim Abbau.',
+  },
+};
 
 export interface DialogNode {
   speaker?: string;
@@ -43,6 +80,7 @@ export interface DialogSpec {
 class GameState extends Phaser.Events.EventEmitter {
   playerName = 'Merit';
   playerGender: PlayerGender = 'female';
+  playerRole: PlayerRole = 'fisher';
   chapter = 1;
   inventory: Record<string, number> = {};
   food = 85;
@@ -129,8 +167,14 @@ class GameState extends Phaser.Events.EventEmitter {
   }
 
   add(item: string, n = 1): void {
-    this.inventory[item] = Math.max(0, this.count(item) + n);
-    if (n > 0) sfx.pickup();
+    let actual = n;
+    if (this.playerRole === 'fisher' && (item === 'nilbarsch' || item === 'datteln')) {
+      actual = n * 2;
+    } else if (this.playerRole === 'builder' && (item === 'lehm' || item === 'stein' || item === 'kalkstein' || item === 'nilschlamm')) {
+      actual = n + 1;
+    }
+    this.inventory[item] = Math.max(0, this.count(item) + actual);
+    if (actual > 0) sfx.pickup();
     this.emit('inventory');
     this.checkQuest();
     this.persist();
@@ -151,8 +195,21 @@ class GameState extends Phaser.Events.EventEmitter {
     return this.canAfford(r);
   }
 
+  getBuildingCost(b: EgyptBuildingDef): Record<string, number> {
+    const discounted: Record<string, number> = {};
+    for (const [id, n] of Object.entries(b.cost)) {
+      if (this.playerRole === 'builder') {
+        discounted[id] = Math.max(1, Math.floor(Number(n ?? 0) * 0.7));
+      } else {
+        discounted[id] = Number(n ?? 0);
+      }
+    }
+    return discounted;
+  }
+
   canAffordBuilding(b: EgyptBuildingDef): boolean {
-    return Object.entries(b.cost).every(([id, n]) => this.count(id) >= Number(n ?? 0));
+    const cost = this.getBuildingCost(b);
+    return Object.entries(cost).every(([id, n]) => this.count(id) >= n);
   }
 
   canAffordTrade(t: EgyptTradeOffer): boolean {
@@ -203,8 +260,9 @@ class GameState extends Phaser.Events.EventEmitter {
   build(b: EgyptBuildingDef): boolean {
     if (this.hasBuilding(b.id)) return false;
     if (!this.canAffordBuilding(b)) return false;
-    for (const [id, n] of Object.entries(b.cost)) {
-      this.inventory[id] = Math.max(0, this.count(id) - Number(n ?? 0));
+    const cost = this.getBuildingCost(b);
+    for (const [id, n] of Object.entries(cost)) {
+      this.inventory[id] = Math.max(0, this.count(id) - n);
     }
     this.addBuilding(b.id);
     sfx.craft();
@@ -221,7 +279,9 @@ class GameState extends Phaser.Events.EventEmitter {
     if (this.hasLexicon(key)) return false;
     this.lexicon.push(key);
     const totalCount = Object.keys(this.lexiconData).length;
-    this.knowledge = Math.min(100, Math.round((this.lexicon.length / Math.max(1, totalCount)) * 100));
+    let base = (this.lexicon.length / Math.max(1, totalCount)) * 100;
+    if (this.playerRole === 'scribe') base *= 1.5;
+    this.knowledge = Math.min(100, Math.round(base));
     sfx.quest();
     this.emit('lexicon', key);
     this.emit('toast', `Neuer Lexikoneintrag: ${this.lexiconData[key]?.title ?? key}`);
@@ -234,7 +294,9 @@ class GameState extends Phaser.Events.EventEmitter {
       if (!this.lexicon.includes(k)) this.lexicon.push(k);
     }
     const totalCount = Object.keys(this.lexiconData).length;
-    this.knowledge = Math.min(100, Math.round((this.lexicon.length / Math.max(1, totalCount)) * 100));
+    let base = (this.lexicon.length / Math.max(1, totalCount)) * 100;
+    if (this.playerRole === 'scribe') base *= 1.5;
+    this.knowledge = Math.min(100, Math.round(base));
   }
 
   openDialog(spec: DialogSpec): void {
@@ -424,27 +486,58 @@ class GameState extends Phaser.Events.EventEmitter {
     return titles[Math.min(titles.length - 1, this.chapter - 1)];
   }
 
+  setProfile(name: string, gender: PlayerGender, role: PlayerRole): void {
+    if (name.trim()) this.playerName = name.trim().slice(0, 20);
+    this.playerGender = gender;
+    this.playerRole = role;
+    this.emit('profileChanged');
+    this.persist();
+  }
+
+  resetNewGame(chapter = 1): void {
+    this.saves.clear();
+    this.startChapter(chapter);
+    this.food = 100;
+    this.safety = 100;
+    this.playTimeSec = 0;
+    this.distanceMeters = 0;
+    this.daysSurvived = 1;
+    this.persist();
+  }
+
+  roleSpecialistTitle(): string {
+    return EGYPT_ROLES[this.playerRole]?.title ?? 'Pionier/in';
+  }
+
   exportCode(): string {
     const pName = (this.playerName || 'MERIT').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
     const gCode = this.playerGender === 'male' ? 'M' : 'W';
+    const rCode = this.playerRole === 'fisher' ? 'F' : this.playerRole === 'scribe' ? 'S' : 'B';
     const mins = Math.max(1, Math.round(this.playTimeSec / 60));
-    return `EGY-${pName}-${gCode}-K${this.chapter}-Q${this.quest}-${mins}M`;
+    return `EGY-${pName}-${gCode}-${rCode}-K${this.chapter}-Q${this.quest}-${mins}M`;
   }
 
   importCode(raw: string): { ok: boolean; msg: string } {
     const clean = raw.trim().toUpperCase();
     const parts = clean.split('-');
     if (parts.length < 6 || parts[0] !== 'EGY') {
-      return { ok: false, msg: 'Ungültiges Code-Format. Erwartet: EGY-NAME-G-K[X]-Q[Y]-[ZEIT]M' };
+      return { ok: false, msg: 'Ungültiges Code-Format. Erwartet: EGY-NAME-G-R-K[X]-Q[Y]-[ZEIT]M' };
     }
     const name = parts[1];
     const gender = parts[2] === 'M' ? 'male' : 'female';
-    const ch = parseInt(parts[3].replace('K', ''), 10);
-    const q = parseInt(parts[4].replace('Q', ''), 10);
+    let role: PlayerRole = 'fisher';
+    let chIdx = 3;
+    if (parts[3] === 'F') { role = 'fisher'; chIdx = 4; }
+    else if (parts[3] === 'S') { role = 'scribe'; chIdx = 4; }
+    else if (parts[3] === 'B') { role = 'builder'; chIdx = 4; }
+
+    const ch = parseInt(parts[chIdx].replace('K', ''), 10);
+    const q = parseInt(parts[chIdx + 1]?.replace('Q', '') || '1', 10);
     if (isNaN(ch) || ch < 1 || ch > 6) return { ok: false, msg: 'Ungültiges Kapitel im Code!' };
 
     this.playerName = name.charAt(0) + name.slice(1).toLowerCase();
     this.playerGender = gender;
+    this.playerRole = role;
     this.startChapter(ch);
     this.quest = isNaN(q) ? 1 : Math.max(1, Math.min(q, 7));
     this.persist();
@@ -454,6 +547,7 @@ class GameState extends Phaser.Events.EventEmitter {
   loadFrom(data: SaveData): void {
     this.playerName = data.playerName || 'Merit';
     this.playerGender = data.playerGender || 'female';
+    this.playerRole = data.playerRole || 'fisher';
     this.chapter = data.chapter || 1;
     this.playerX = data.x ?? 440;
     this.playerY = data.y ?? 320;
@@ -476,10 +570,11 @@ class GameState extends Phaser.Events.EventEmitter {
 
   toSaveData(): SaveData {
     return {
-      version: 3,
+      version: 4,
       epoch: 'aegypten',
       playerName: this.playerName,
       playerGender: this.playerGender,
+      playerRole: this.playerRole,
       chapter: this.chapter,
       x: this.playerX,
       y: this.playerY,

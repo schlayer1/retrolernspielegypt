@@ -1,4 +1,5 @@
 export type PlayerGender = 'male' | 'female';
+export type PlayerRole = 'fisher' | 'scribe' | 'builder';
 
 export interface FarmPlotState {
   id: number;
@@ -11,6 +12,7 @@ export interface SaveData {
   epoch: 'aegypten';
   playerName: string;
   playerGender: PlayerGender;
+  playerRole: PlayerRole;
   chapter: number;
   x: number;
   y: number;

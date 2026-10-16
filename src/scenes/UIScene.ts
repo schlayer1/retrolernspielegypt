@@ -18,7 +18,7 @@ import {
   EgyptRecipe,
   EgyptTradeOffer,
 } from '../data/items';
-import { DialogSpec, state } from '../systems/GameState';
+import { DialogSpec, EGYPT_ROLES, PlayerRole, state } from '../systems/GameState';
 import { PlayerGender } from '../systems/SaveManager';
 import { TouchControls } from '../ui/TouchControls';
 
@@ -85,6 +85,8 @@ export class UIScene extends Phaser.Scene {
   private lexSelected = 'kemet';
   private bagTab: 'all' | 'tool' | 'food' | 'material' | 'culture' = 'all';
   private bagSelected: EgyptItemId = 'papyrus_staengel';
+  private startSelectedChapter = 1;
+  private selectedRole: PlayerRole = 'fisher';
 
   private toastQueue: string[] = [];
   private toastBusy = false;
@@ -109,6 +111,9 @@ export class UIScene extends Phaser.Scene {
     if (!existing) document.body.appendChild(this.root);
     this.root.innerHTML = '';
 
+    this.selectedRole = state.playerRole || 'fisher';
+    this.startSelectedChapter = state.chapter || 1;
+
     this.mountDOM();
     this.bindEvents();
     this.bindKeys();
@@ -117,7 +122,7 @@ export class UIScene extends Phaser.Scene {
     this.renderHUD();
     this.renderHotbar();
 
-    if (!state.skipStartScreen && !state.hasHadExistingSaveOnBoot) {
+    if (!state.skipStartScreen) {
       this.openStartScreen();
     }
   }
@@ -280,7 +285,7 @@ export class UIScene extends Phaser.Scene {
       if (this.isTyping()) return;
 
       if (e.key === 'Escape') {
-        if (this.activePanel !== 'none') this.closeModal();
+        if (this.activePanel !== 'none' && this.activePanel !== 'start') this.closeModal();
         return;
       }
       if (e.key === 'p' || e.key === 'P') {
@@ -510,6 +515,8 @@ export class UIScene extends Phaser.Scene {
     state.modal = true;
     this.modalTitleEl.textContent = title;
     this.modalCardEl.classList.toggle('dark', panel === 'pause');
+    const closeBtn = this.root.querySelector('#modal-close-btn') as HTMLElement | null;
+    if (closeBtn) closeBtn.style.display = panel === 'start' ? 'none' : 'inline-flex';
     this.backdropEl.style.display = 'flex';
   }
 
@@ -521,45 +528,281 @@ export class UIScene extends Phaser.Scene {
   }
 
   private openStartScreen(): void {
-    this.openModal('start', 'Willkommen im Alten Ägypten');
+    this.openModal('start', '🏺 Willkommen im Alten Ägypten! (Klasse 5/6)');
+
+    const currentAvatar = state.playerGender === 'female' ? state.femalePreviewUrl : state.malePreviewUrl;
+    const savedMeta = CHAPTERS[state.chapter] ?? CHAPTERS[1];
+    const savedQuest = savedMeta.quests[Math.min(state.quest, savedMeta.quests.length - 1)];
+
+    const resumeHtml = state.hasHadExistingSaveOnBoot
+      ? `
+        <div style="background:linear-gradient(135deg,#1d3b1a 0%,#2b5324 100%);border:2.5px solid #86efac;border-radius:10px;padding:12px 16px;color:#fff;margin-bottom:14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div class="gender-avatar-box" style="border-color:#86efac;">
+              <img src="${currentAvatar || 'assets/gfx/player_egypt_female.png'}" alt="Spielfigur" />
+            </div>
+            <div>
+              <div style="font-size:11.5px;font-weight:800;color:#bbf7d0;text-transform:uppercase;">
+                ✓ Gespeicherter Spielstand auf diesem Gerät gefunden
+              </div>
+              <div style="font-size:18px;font-weight:900;color:#fff;">
+                ${escapeHtml(state.playerName)} · ${escapeHtml(state.roleSpecialistTitle())}
+              </div>
+              <div style="font-size:13px;color:#dcfce7;">
+                ${escapeHtml(savedMeta.title)} · Aufgabe: ${escapeHtml(savedQuest)} · ⏱ ${escapeHtml(state.formatPlayTime())}
+              </div>
+            </div>
+          </div>
+          <button class="retro-btn" id="start-resume-btn" style="background:#22c55e;color:#052e16;border-color:#bbf7d0;font-size:15px;padding:10px 18px;font-weight:900;">
+            ▶️ Direkt weiterspielen!
+          </button>
+        </div>
+      `
+      : '';
+
+    const shortEras = ['', 'Nilnomaden', 'Bewässerung', 'Staatsbildung', 'Schriftkultur', 'Monumente', 'Welthandel'];
+    const chPills = [1, 2, 3, 4, 5, 6]
+      .map((ch) => {
+        const active = this.startSelectedChapter === ch;
+        return `
+          <button type="button" class="retro-btn" data-start-ch="${ch}" style="background:${active ? '#b45309' : '#3a2410'};border-color:${active ? '#fde68a' : '#8b5a2b'};padding:4px 8px;font-size:12px;color:#ffe9b0;">
+            <span class="key-badge">${ch}</span> ${shortEras[ch]}
+          </button>
+        `;
+      })
+      .join('');
+
     this.modalBodyEl.innerHTML = `
       <div class="start-hero">
-        <div class="start-hero-title">Kemet – Das Geschenk des Nils</div>
-        <div class="start-hero-sub">16-Bit-Geschichtsabenteuer der Heimbürgeschule Kahla</div>
+        <div class="start-hero-title">🏺 KEMET – DAS GESCHENK DES NILS · HOCHKULTUR AM STROM</div>
+        <div class="start-hero-sub">
+          Erlebe in 6 didaktischen Kapiteln, wie aus nomadisierenden Schilffischern die erste Hochkultur der Menschheit entstand – mit Schaduf-Ackerbau, Lehmziegelstädten, Hieroglyphen und dem Pyramidenbau von Gizeh!
+        </div>
+        <div class="showcase-strip">
+          <div class="showcase-card">
+            <img src="assets/icons/nilbarsch.png" alt="Kapitel 1" />
+            <div class="showcase-era">Kap. 1 · Nilnomaden</div>
+            <div class="showcase-caption">Schilfboot, Fischreuse & Dattelpalmen</div>
+          </div>
+          <div class="showcase-card">
+            <img src="assets/icons/schaduf_teil.png" alt="Kapitel 2" />
+            <div class="showcase-era">Kap. 2 · Bewässerung</div>
+            <div class="showcase-caption">Schaduf-Hebel, Nilometer & Pflug</div>
+          </div>
+          <div class="showcase-card">
+            <img src="assets/icons/lehmziegel.png" alt="Kapitel 3" />
+            <div class="showcase-era">Kap. 3 · Staatsbildung</div>
+            <div class="showcase-caption">Lehmziegelofen & Kornspeicher</div>
+          </div>
+          <div class="showcase-card">
+            <img src="assets/icons/papyrusrolle.png" alt="Kapitel 4" />
+            <div class="showcase-era">Kap. 4 · Schriftkultur</div>
+            <div class="showcase-caption">Papyrusrollen & Hieroglyphen</div>
+          </div>
+          <div class="showcase-card">
+            <img src="assets/icons/kalkstein.png" alt="Kapitel 5" />
+            <div class="showcase-era">Kap. 5 · Monumente</div>
+            <div class="showcase-caption">Kalksteinquader & Pyramidenbau</div>
+          </div>
+          <div class="showcase-card">
+            <img src="assets/icons/goldmaske.png" alt="Kapitel 6" />
+            <div class="showcase-era">Kap. 6 · Welthandel</div>
+            <div class="showcase-caption">Nilschiffe, Zedern & Gold</div>
+          </div>
+        </div>
       </div>
-      <p style="font-size:14px;color:#f8fafc;line-height:1.5;margin-bottom:12px;">
-        Erlebe die Entstehung der ersten Hochkultur der Menschheit: Von nomadischen Schilffischern am Nil über die Erfindung des Schadufs und der Hieroglyphen bis zum Pyramidenbau von Gizeh!
-      </p>
-      <div style="background:#2a1d10;padding:12px;border:1.5px solid #e8c170;border-radius:8px;margin-bottom:12px;">
-        <label style="font-size:13px;font-weight:bold;color:#fde047;">Dein Forscher-Name:</label>
-        <input type="text" id="start-name" style="width:100%;padding:6px 10px;margin:6px 0 10px;background:#1e1b18;border:1px solid #e8c170;color:#fff;border-radius:5px;font-size:14px;" value="${escapeHtml(state.playerName)}" maxlength="14" />
-        <label style="font-size:13px;font-weight:bold;color:#fde047;display:block;margin-bottom:6px;">Wähle deinen Charakter:</label>
-        <div style="display:flex;gap:12px;">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-            <input type="radio" name="gender" value="female" ${state.playerGender === 'female' ? 'checked' : ''} />
-            <span>👩 Merit (Ägypterin)</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-            <input type="radio" name="gender" value="male" ${state.playerGender === 'male' ? 'checked' : ''} />
-            <span>👨 Nakht (Ägypter)</span>
-          </label>
+
+      ${resumeHtml}
+
+      <div style="background:#fffdf7;border:2px solid #c29b61;border-radius:10px;padding:10px 14px;margin-bottom:8px;">
+        <div style="font-weight:900;font-size:15px;color:#5a2d0c;margin-bottom:4px;">
+          1. Wähle deine Spielfigur (Merit oder Nakht):
+        </div>
+        <div class="gender-grid">
+          <button type="button" class="gender-card ${state.playerGender === 'female' ? 'active' : ''}" data-pick-gender="female">
+            <div class="gender-avatar-box">
+              <img src="${state.femalePreviewUrl || 'assets/gfx/player_egypt_female.png'}" alt="Merit" />
+            </div>
+            <div>
+              <div style="font-size:16px;font-weight:900;color:#5a2d0c;">👩 Merit (Ägypterin)</div>
+              <div style="font-size:13px;font-weight:700;color:#b45309;">„Vom Schilfboot zur Wesirin“</div>
+              <div style="font-size:12px;color:#6b533b;margin-top:2px;">Weißes Leinenkleid, Pektoral & geflochtene Zöpfe</div>
+            </div>
+          </button>
+
+          <button type="button" class="gender-card ${state.playerGender === 'male' ? 'active' : ''}" data-pick-gender="male">
+            <div class="gender-avatar-box">
+              <img src="${state.malePreviewUrl || 'assets/gfx/player_egypt_male.png'}" alt="Nakht" />
+            </div>
+            <div>
+              <div style="font-size:16px;font-weight:900;color:#5a2d0c;">👦 Nakht (Ägypter)</div>
+              <div style="font-size:13px;font-weight:700;color:#b45309;">„Vom Fischer zum Baumeister“</div>
+              <div style="font-size:12px;color:#6b533b;margin-top:2px;">Leinenschurz, Schenti & schwarzes Haar</div>
+            </div>
+          </button>
+        </div>
+
+        <div style="font-weight:900;font-size:15px;color:#5a2d0c;margin-top:14px;margin-bottom:6px;">
+          2. Wähle deine historische Spezialisierung (Rolle):
+        </div>
+        <div class="role-grid">
+          ${(Object.keys(EGYPT_ROLES) as PlayerRole[])
+            .map((rKey) => {
+              const r = EGYPT_ROLES[rKey];
+              const active = this.selectedRole === rKey;
+              return `
+                <button type="button" class="role-card ${active ? 'active' : ''}" data-pick-role="${rKey}">
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:24px;">${r.icon}</span>
+                    <span class="role-badge" style="background:${active ? '#b45309' : '#3a2410'};">${active ? '✓ Gewählt' : 'Wählen'}</span>
+                  </div>
+                  <div style="font-weight:900;font-size:14.5px;color:#5a2d0c;">${escapeHtml(r.name)}</div>
+                  <div style="font-size:12px;color:#6b533b;">${escapeHtml(r.desc)}</div>
+                  <div class="role-perk">⚡ ${escapeHtml(r.perk)}</div>
+                </button>
+              `;
+            })
+            .join('')}
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:10px;align-items:end;">
+          <div>
+            <label for="start-name-input" style="display:block;font-weight:900;font-size:14px;color:#5a2d0c;margin-bottom:3px;">
+              3. Wie heißt du? (Dein Name im Alten Ägypten & auf der Urkunde):
+            </label>
+            <input
+              id="start-name-input"
+              type="text"
+              maxlength="20"
+              value="${escapeHtml(state.playerName)}"
+              placeholder="z. B. Merit, Nakht, Senmut, Nefertari ..."
+              style="width:100%;padding:7px 10px;font-size:14.5px;font-weight:800;border:2px solid #b45309;border-radius:8px;background:#fff;color:#2a1d10;"
+            />
+          </div>
+          <div>
+            <div style="font-weight:900;font-size:14.5px;color:#5a2d0c;margin-bottom:4px;">
+              4. Start-Epoche wählen:
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">${chPills}</div>
+          </div>
         </div>
       </div>
     `;
+
+    this.modalFooterEl.style.justifyContent = 'space-between';
     this.modalFooterEl.innerHTML = `
-      <button class="retro-btn btn-primary" id="btn-start-adventure" style="background:#d97706;border-color:#fef08a;color:#1e1b18;font-weight:900;">Abenteuer am Nil starten ▶</button>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-weight:800;font-size:13px;color:#ffe9b0;">🔑 Hefter-Code (anderes Gerät):</span>
+        <input
+          id="start-code-input"
+          type="text"
+          placeholder="z. B. EGY-MERIT-W-F-K2-Q3-10M"
+          style="padding:7px 10px;font-size:13.5px;font-weight:800;border:2px solid #e8c170;border-radius:7px;background:#1e1b18;color:#ffe9b0;width:220px;text-transform:uppercase;"
+        />
+        <button class="retro-btn" id="start-code-btn">📂 Code laden</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${
+          state.hasHadExistingSaveOnBoot
+            ? `
+          <button class="retro-btn" id="start-resume-bottom-btn" style="background:#22c55e;color:#052e16;font-size:15px;padding:9px 16px;border-color:#bbf7d0;font-weight:900;">
+            ▶️ Gespeicherten Stand weiterspielen (Kap. ${state.chapter})
+          </button>
+        `
+            : ''
+        }
+        <button class="retro-btn" id="start-go-btn" style="background:#b45309;color:#fff;font-size:15px;padding:9px 18px;border-color:#fde68a;font-weight:900;">
+          🚀 Neues Spiel starten (ab Kap. ${this.startSelectedChapter})
+        </button>
+      </div>
     `;
 
-    this.modalFooterEl.querySelector('#btn-start-adventure')!.addEventListener('click', () => {
-      const nameInput = this.modalBodyEl.querySelector('#start-name') as HTMLInputElement;
-      if (nameInput?.value.trim()) state.playerName = nameInput.value.trim();
-      const gRadio = this.modalBodyEl.querySelector('input[name="gender"]:checked') as HTMLInputElement;
-      if (gRadio?.value) state.playerGender = gRadio.value as PlayerGender;
-      state.emit('profileChanged');
-      state.persist();
-      this.closeModal();
-      this.toast(`Willkommen in Kemet, ${state.playerName}!`);
+    const nameInput = this.modalBodyEl.querySelector('#start-name-input') as HTMLInputElement;
+    const syncNameFromInput = () => {
+      const v = nameInput?.value.trim();
+      if (v) state.playerName = v.slice(0, 20);
+      else if (!state.playerName) state.playerName = state.playerGender === 'female' ? 'Merit' : 'Nakht';
+    };
+
+    this.modalBodyEl.querySelectorAll('[data-pick-gender]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        syncNameFromInput();
+        const g = (btn as HTMLElement).dataset.pickGender === 'male' ? 'male' : 'female';
+        if (state.playerName === 'Merit' && g === 'male') state.playerName = 'Nakht';
+        else if (state.playerName === 'Nakht' && g === 'female') state.playerName = 'Merit';
+        state.setProfile(state.playerName, g, this.selectedRole);
+        this.openStartScreen();
+      });
     });
+
+    this.modalBodyEl.querySelectorAll('[data-pick-role]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        syncNameFromInput();
+        this.selectedRole = ((btn as HTMLElement).dataset.pickRole as PlayerRole) ?? 'fisher';
+        state.setProfile(state.playerName, state.playerGender, this.selectedRole);
+        this.openStartScreen();
+      });
+    });
+
+    this.modalBodyEl.querySelectorAll('[data-start-ch]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        syncNameFromInput();
+        this.startSelectedChapter = Number((btn as HTMLElement).dataset.startCh) || 1;
+        this.openStartScreen();
+      });
+    });
+
+    const handleResume = () => {
+      syncNameFromInput();
+      state.setProfile(state.playerName, state.playerGender, this.selectedRole);
+      this.closeModal();
+      this.toast(`Willkommen zurück, ${state.playerName} (${state.roleSpecialistTitle()})!`);
+      this.renderHUD();
+      this.renderHotbar();
+    };
+
+    const resumeTopBtn = this.modalBodyEl.querySelector('#start-resume-btn');
+    if (resumeTopBtn) resumeTopBtn.addEventListener('click', handleResume);
+
+    const resumeBtmBtn = this.modalFooterEl.querySelector('#start-resume-bottom-btn');
+    if (resumeBtmBtn) resumeBtmBtn.addEventListener('click', handleResume);
+
+    const startBtn = this.modalFooterEl.querySelector('#start-go-btn');
+    if (startBtn) {
+      startBtn.addEventListener('click', () => {
+        syncNameFromInput();
+        state.setProfile(state.playerName, state.playerGender, this.selectedRole);
+        state.resetNewGame(this.startSelectedChapter);
+        if (this.selectedRole === 'scribe') {
+          state.unlockSilent(['hieroglyphen', 'papyrus', 'schreiber']);
+        }
+        this.closeModal();
+        this.toast(`Möge Re dich leiten, ${state.playerName}! Kapitel ${state.chapter} beginnt.`);
+        this.renderHUD();
+        this.renderHotbar();
+      });
+    }
+
+    const codeBtn = this.modalFooterEl.querySelector('#start-code-btn');
+    if (codeBtn) {
+      codeBtn.addEventListener('click', () => {
+        const inp = this.modalFooterEl.querySelector('#start-code-input') as HTMLInputElement;
+        const code = inp?.value.trim() ?? '';
+        if (!code) {
+          alert('Bitte gib einen gültigen Mnemotechnik-Speichercode ein (z. B. EGY-MERIT-W-F-K2-Q3-10M).');
+          return;
+        }
+        const res = state.importCode(code);
+        if (res.ok) {
+          this.closeModal();
+          this.toast(res.msg);
+          this.renderHUD();
+          this.renderHotbar();
+        } else {
+          alert(res.msg);
+        }
+      });
+    }
   }
 
   private openPause(): void {
@@ -570,7 +813,7 @@ export class UIScene extends Phaser.Scene {
 
     this.modalBodyEl.innerHTML = `
       <div class="pause-stats" style="margin-bottom:14px;">
-        <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Forscher:</span> <strong>${escapeHtml(state.playerName)} (${state.playerGender === 'female' ? 'Weiblich' : 'Männlich'})</strong></div>
+        <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Forscher:</span> <strong>${escapeHtml(state.playerName)} (${state.playerGender === 'female' ? 'Weiblich' : 'Männlich'}) · ${escapeHtml(state.roleSpecialistTitle())}</strong></div>
         <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Titel / Rang:</span> <strong style="color:#fde047;">${escapeHtml(rank)}</strong></div>
         <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Aktuelles Zeitalter:</span> <strong>Kapitel ${state.chapter}</strong></div>
         <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Spielzeit:</span> <strong>${timeStr}</strong></div>

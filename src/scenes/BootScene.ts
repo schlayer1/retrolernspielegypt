@@ -162,6 +162,7 @@ export class BootScene extends Phaser.Scene {
     }
 
     this.createCustomSprites();
+    this.extractPreviewImages();
 
     // 4-Wege-Animationen für Nakht (Male) und Merit (Female)
     const dirs = ['down', 'right', 'up', 'left'];
@@ -297,5 +298,37 @@ export class BootScene extends Phaser.Scene {
     gp.fillStyle(0xfde047, 1).fillRect(8, 12, 24, 16);
     gp.generateTexture('forge', 40, 36);
     gp.destroy();
+  }
+
+  /** Extrahiert scharfe Data-URLs der Spielgrafiken für den Start- und Pausescreen. */
+  private extractPreviewImages(): void {
+    const toDataUrl = (texKey: string, sx?: number, sy?: number, sw?: number, sh?: number): string => {
+      if (!this.textures.exists(texKey)) return '';
+      const src = this.textures.get(texKey).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+      if (!src) return '';
+      const w = sw ?? src.width;
+      const h = sh ?? src.height;
+      const x = sx ?? 0;
+      const y = sy ?? 0;
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d')!;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(src, x, y, w, h, 0, 0, w, h);
+      return c.toDataURL();
+    };
+
+    state.malePreviewUrl = toDataUrl('player_egypt_male', 0, 0, 16, 32);
+    state.femalePreviewUrl = toDataUrl('player_egypt_female', 0, 0, 16, 32);
+
+    state.showcaseSprites = {
+      fish: 'assets/icons/nilbarsch.png',
+      schaduf: 'assets/icons/schaduf_teil.png',
+      brick: 'assets/icons/lehmziegel.png',
+      papyrus: 'assets/icons/papyrusrolle.png',
+      pyramid: 'assets/icons/kalkstein.png',
+      boat: 'assets/icons/goldmaske.png',
+    };
   }
 }
