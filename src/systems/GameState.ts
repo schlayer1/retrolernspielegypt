@@ -328,8 +328,8 @@ class GameState extends Phaser.Events.EventEmitter {
       this.unlockSilent(['pharao', 'wesir', 'hochkultur']);
     } else if (ch === 4) {
       this.buildings = ['schaduf', 'ziegelei', 'speicher'];
-      this.playerX = 270;
-      this.playerY = 175;
+      this.playerX = 240;
+      this.playerY = 355;
       this.unlockSilent(['schreiber', 'hieroglyphen', 'polytheismus']);
     } else if (ch === 5) {
       this.buildings = ['schaduf', 'ziegelei', 'speicher', 'schreiberhaus', 'wabet'];
@@ -344,11 +344,11 @@ class GameState extends Phaser.Events.EventEmitter {
     }
 
     sfx.quest();
+    this.persist();
     this.emit('buildings');
     this.emit('chapterChanged', ch);
     this.emit('inventory');
     this.emit('quest');
-    this.persist();
   }
 
   checkQuest(): void {
@@ -361,8 +361,8 @@ class GameState extends Phaser.Events.EventEmitter {
         () => c('papyrus_staengel') >= 3 || this.count('papyrus_staengel') >= 3,
         () => (this.count('stock') >= 2 && this.count('stein') >= 2) || c('schilf_gesammelt') >= 2,
         () => this.count('fischreuse') >= 1 || c('craft_fischreuse') >= 1,
-        () => c('trap') >= 1 || c('fisch_fang') >= 1 || this.count('nilbarsch') >= 1,
-        () => c('cooked') >= 1 || c('cooked_fish') >= 1,
+        () => c('trap') >= 1 || c('fisch_fang') >= 1 || c('caught_fish') >= 1 || this.count('nilbarsch') >= 1,
+        () => c('cooked') >= 1 || c('cooked_fish') >= 1 || this.count('cooked_fish') >= 1,
       ];
     } else if (this.chapter === 2) {
       conds = [
@@ -451,10 +451,11 @@ class GameState extends Phaser.Events.EventEmitter {
 
   eat(): string {
     const foods = [
+      { id: 'cooked_fish', val: 35, name: 'Gebratener Nilbarsch' },
       { id: 'brot', val: 35, name: 'Emmerbrot' },
       { id: 'bier', val: 25, name: 'Krug Gerstenbier' },
       { id: 'datteln', val: 20, name: 'Süße Datteln' },
-      { id: 'nilbarsch', val: 30, name: 'Gebratener Nilbarsch' },
+      { id: 'nilbarsch', val: 20, name: 'Frischer Nilbarsch' },
       { id: 'gebratenes_fleisch', val: 40, name: 'Gebratenes Fleisch' },
       { id: 'beere', val: 12, name: 'Wüstenbeeren' },
     ];

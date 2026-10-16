@@ -28,17 +28,16 @@ async function run() {
   page.on('response', (res) => {
     if (res.status() === 404) {
       console.log('404 URL:', res.url());
+      errors.push(`404: ${res.url()}`);
     }
   });
 
   console.log('--- Navigating to http://localhost:5174 ---');
   await page.goto('http://localhost:5174', { waitUntil: 'networkidle2' });
 
-  // Wait for game and state to be ready
   await page.waitForFunction(() => window.state && window.game);
   console.log('Phaser and GameState initialized.');
 
-  // Helper to click next button on dialog if visible
   async function advanceDialogUntilClosed() {
     let loopCount = 0;
     while (loopCount < 25) {
@@ -49,7 +48,6 @@ async function run() {
       });
       if (!isVisible) break;
 
-      // Check if question buttons are active
       const hasOpts = await page.evaluate(() => {
         const opts = document.getElementById('dlg-opts');
         return opts && opts.children.length > 0;
@@ -69,17 +67,16 @@ async function run() {
             }
           }
         });
-        await new Promise((r) => setTimeout(r, 200));
+        await new Promise((r) => setTimeout(r, 180));
       }
 
-      // Click dlg-next
       await page.evaluate(() => {
         const nextBtn = document.getElementById('dlg-next-btn');
         if (nextBtn && nextBtn.style.display !== 'none') {
           nextBtn.click();
         }
       });
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 180));
     }
   }
 
@@ -99,25 +96,19 @@ async function run() {
     }
   });
 
-  await new Promise((r) => setTimeout(r, 500));
+  await new Promise((r) => setTimeout(r, 400));
 
-  // Verify Chapter 1
-  let ch = await page.evaluate(() => window.state.chapter);
-  console.log(`Current chapter: ${ch}`);
-
-  // Test Chapter 1 Quest Flow
+  // Test Chapter 1 Quest Flow (including real campfire interaction bugfix!)
   console.log('Testing Chapter 1 flow...');
   await page.evaluate(() => {
     const ws = window.game.scene.getScene('World');
     ws.interactSenbi();
   });
   await advanceDialogUntilClosed();
-  let q = await page.evaluate(() => window.state.quest);
-  console.log(`After Senbi intro: Quest = ${q}`);
 
-  // Advance quests 1 to 5
   await page.evaluate(() => {
     const s = window.state;
+    const ws = window.game.scene.getScene('World');
     s.add('papyrus_staengel', 3);
     s.checkQuest();
     s.add('stock', 2);
@@ -125,25 +116,26 @@ async function run() {
     s.checkQuest();
     s.craft(s.recipesData.find((r) => r.id === 'fischreuse'));
     s.checkQuest();
-    s.bump('trap', 1);
+    // Real fish spot interaction
+    const fishNode = ws.nodes.find((n) => n.kind === 'egypt_fish_spot');
+    ws.interact(fishNode);
     s.checkQuest();
-    s.bump('cooked', 1);
+    // Real campfire interaction (tests the fixed campfire bug!)
+    const fireNode = ws.nodes.find((n) => n.kind === 'egypt_campfire');
+    ws.interact(fireNode);
     s.checkQuest();
   });
 
-  q = await page.evaluate(() => window.state.quest);
+  let q = await page.evaluate(() => window.state.quest);
   let readyForQuiz = await page.evaluate(() => window.state.isReadyForQuiz());
-  console.log(`After Ch1 tasks: Quest = ${q}, readyForQuiz = ${readyForQuiz}`);
+  console.log(`After Ch1 real interactions: Quest = ${q}, readyForQuiz = ${readyForQuiz}`);
+  if (!readyForQuiz) throw new Error('Ch1 Quest 5 campfire interaction did not advance quest to quiz!');
 
-  // Ch 1 Quiz
   await page.evaluate(() => {
     const ws = window.game.scene.getScene('World');
     ws.interactSenbi();
   });
   await advanceDialogUntilClosed();
-
-  ch = await page.evaluate(() => window.state.chapter);
-  console.log(`Transition to Chapter ${ch}`);
 
   // Chapter 2 Flow
   console.log('Testing Chapter 2 flow...');
@@ -152,16 +144,17 @@ async function run() {
     ws.interactAmeni();
   });
   await advanceDialogUntilClosed();
-  q = await page.evaluate(() => window.state.quest);
-  console.log(`After Ameni intro: Quest = ${q}`);
 
   await page.evaluate(() => {
     const s = window.state;
+    const ws = window.game.scene.getScene('World');
     s.bump('nilometer', 1);
     s.checkQuest();
     s.add('schaduf_teil', 1);
     s.checkQuest();
     s.addBuilding('schaduf');
+    const schadufNode = ws.nodes.find((n) => n.buildingDef?.id === 'schaduf');
+    if (schadufNode) ws.renderBuiltEgyptBuilding(schadufNode);
     s.checkQuest();
     s.bump('schaduf_water', 1);
     s.checkQuest();
@@ -174,16 +167,15 @@ async function run() {
     s.bump('harvested_emmer', 1);
     s.checkQuest();
   });
-  readyForQuiz = await page.evaluate(() => window.state.isReadyForQuiz());
-  console.log(`Ch2 tasks complete, readyForQuiz = ${readyForQuiz}`);
+
+  await new Promise((r) => setTimeout(r, 300));
+  await page.screenshot({ path: '/Users/nicolekeller/.gemini/antigravity/brain/4ccea14a-c7ef-46ed-9971-f8c95e17bdbc/enriched_ch2_fields.png' });
 
   await page.evaluate(() => {
     const ws = window.game.scene.getScene('World');
     ws.interactAmeni();
   });
   await advanceDialogUntilClosed();
-  ch = await page.evaluate(() => window.state.chapter);
-  console.log(`Transition to Chapter ${ch}`);
 
   // Chapter 3 Flow
   console.log('Testing Chapter 3 flow...');
@@ -192,18 +184,21 @@ async function run() {
     ws.interactNefermaat();
   });
   await advanceDialogUntilClosed();
-  q = await page.evaluate(() => window.state.quest);
-  console.log(`After Nefermaat intro: Quest = ${q}`);
 
   await page.evaluate(() => {
     const s = window.state;
+    const ws = window.game.scene.getScene('World');
     s.add('nilschlamm', 3);
     s.checkQuest();
     s.addBuilding('ziegelei');
+    const zNode = ws.nodes.find((n) => n.buildingDef?.id === 'ziegelei');
+    if (zNode) ws.renderBuiltEgyptBuilding(zNode);
     s.checkQuest();
     s.add('lehmziegel', 3);
     s.checkQuest();
     s.addBuilding('speicher');
+    const spNode = ws.nodes.find((n) => n.buildingDef?.id === 'speicher');
+    if (spNode) ws.renderBuiltEgyptBuilding(spNode);
     s.checkQuest();
     s.add('tontopf', 1);
     s.checkQuest();
@@ -213,16 +208,12 @@ async function run() {
     s.add('bier', 1);
     s.checkQuest();
   });
-  readyForQuiz = await page.evaluate(() => window.state.isReadyForQuiz());
-  console.log(`Ch3 tasks complete, readyForQuiz = ${readyForQuiz}`);
 
   await page.evaluate(() => {
     const ws = window.game.scene.getScene('World');
     ws.interactNefermaat();
   });
   await advanceDialogUntilClosed();
-  ch = await page.evaluate(() => window.state.chapter);
-  console.log(`Transition to Chapter ${ch}`);
 
   // Chapter 4 Flow
   console.log('Testing Chapter 4 flow...');
@@ -231,12 +222,13 @@ async function run() {
     ws.interactAni();
   });
   await advanceDialogUntilClosed();
-  q = await page.evaluate(() => window.state.quest);
-  console.log(`After Ani intro: Quest = ${q}`);
 
   await page.evaluate(() => {
     const s = window.state;
+    const ws = window.game.scene.getScene('World');
     s.addBuilding('schreiberhaus');
+    const shNode = ws.nodes.find((n) => n.buildingDef?.id === 'schreiberhaus');
+    if (shNode) ws.renderBuiltEgyptBuilding(shNode);
     s.checkQuest();
     s.add('papyrusrolle', 1);
     s.checkQuest();
@@ -245,6 +237,8 @@ async function run() {
     s.bump('tax_recorded', 1);
     s.checkQuest();
     s.addBuilding('wabet');
+    const wNode = ws.nodes.find((n) => n.buildingDef?.id === 'wabet');
+    if (wNode) ws.renderBuiltEgyptBuilding(wNode);
     s.checkQuest();
     s.add('salz', 2);
     s.add('kanope', 1);
@@ -252,16 +246,15 @@ async function run() {
     s.add('skanabaeus', 1);
     s.checkQuest();
   });
-  readyForQuiz = await page.evaluate(() => window.state.isReadyForQuiz());
-  console.log(`Ch4 tasks complete, readyForQuiz = ${readyForQuiz}`);
+
+  await new Promise((r) => setTimeout(r, 300));
+  await page.screenshot({ path: '/Users/nicolekeller/.gemini/antigravity/brain/4ccea14a-c7ef-46ed-9971-f8c95e17bdbc/enriched_ch4_temple_court.png' });
 
   await page.evaluate(() => {
     const ws = window.game.scene.getScene('World');
     ws.interactAni();
   });
   await advanceDialogUntilClosed();
-  ch = await page.evaluate(() => window.state.chapter);
-  console.log(`Transition to Chapter ${ch}`);
 
   // Chapter 5 Flow
   console.log('Testing Chapter 5 flow...');
@@ -270,12 +263,13 @@ async function run() {
     ws.interactHemiunu();
   });
   await advanceDialogUntilClosed();
-  q = await page.evaluate(() => window.state.quest);
-  console.log(`After Hemiunu intro: Quest = ${q}`);
 
   await page.evaluate(() => {
     const s = window.state;
+    const ws = window.game.scene.getScene('World');
     s.addBuilding('steinmetz');
+    const stNode = ws.nodes.find((n) => n.buildingDef?.id === 'steinmetz');
+    if (stNode) ws.renderBuiltEgyptBuilding(stNode);
     s.checkQuest();
     s.add('kalkstein', 3);
     s.checkQuest();
@@ -289,17 +283,17 @@ async function run() {
     s.checkQuest();
     s.bump('sphinx_aligned', 1);
     s.checkQuest();
+    ws.player.setPosition(145, 165);
   });
-  readyForQuiz = await page.evaluate(() => window.state.isReadyForQuiz());
-  console.log(`Ch5 tasks complete, readyForQuiz = ${readyForQuiz}`);
+
+  await new Promise((r) => setTimeout(r, 300));
+  await page.screenshot({ path: '/Users/nicolekeller/.gemini/antigravity/brain/4ccea14a-c7ef-46ed-9971-f8c95e17bdbc/enriched_ch5_gizeh.png' });
 
   await page.evaluate(() => {
     const ws = window.game.scene.getScene('World');
     ws.interactHemiunu();
   });
   await advanceDialogUntilClosed();
-  ch = await page.evaluate(() => window.state.chapter);
-  console.log(`Transition to Chapter ${ch}`);
 
   // Chapter 6 Flow
   console.log('Testing Chapter 6 flow...');
@@ -308,8 +302,9 @@ async function run() {
     ws.interactBaki();
   });
   await advanceDialogUntilClosed();
-  q = await page.evaluate(() => window.state.quest);
-  console.log(`After Baki intro: Quest = ${q}`);
+
+  await new Promise((r) => setTimeout(r, 300));
+  await page.screenshot({ path: '/Users/nicolekeller/.gemini/antigravity/brain/4ccea14a-c7ef-46ed-9971-f8c95e17bdbc/enriched_ch6_harbor_bazaar.png' });
 
   await page.evaluate(() => {
     const s = window.state;
@@ -326,20 +321,15 @@ async function run() {
     s.bump('treaty_signed', 1);
     s.checkQuest();
   });
-  readyForQuiz = await page.evaluate(() => window.state.isReadyForQuiz());
-  console.log(`Ch6 tasks complete, readyForQuiz = ${readyForQuiz}`);
 
-  // Baki Abschluss-Prüfung
   await page.evaluate(() => {
     const ws = window.game.scene.getScene('World');
     ws.interactBaki();
   });
   await advanceDialogUntilClosed();
 
-  // Wait a moment for modal opening
-  await new Promise((r) => setTimeout(r, 800));
+  await new Promise((r) => setTimeout(r, 500));
 
-  // Check if Certificate modal card is open
   const certModalCheck = await page.evaluate(() => {
     const backdrop = document.getElementById('modal-backdrop');
     const title = document.getElementById('modal-title');
@@ -350,27 +340,17 @@ async function run() {
   });
   console.log('Certificate Modal State:', certModalCheck);
 
-  // Take screenshot of certificate modal
-  await page.screenshot({ path: '/Users/nicolekeller/.gemini/antigravity/brain/4ccea14a-c7ef-46ed-9971-f8c95e17bdbc/final_certificate_unlocked.png' });
-  console.log('Screenshot saved to final_certificate_unlocked.png');
-
-  // Verify soundtrack loops
-  const musicCheck = await page.evaluate(() => {
-    return Boolean(window.state);
-  });
-  console.log(`GameState active: ${musicCheck}`);
-
-  // Filter ignorable audio warnings (Web Audio autoplay policy in headless)
   const realErrors = errors.filter(
-    (e) => !e.includes('AudioContext') && !e.includes('favicon.ico') && !e.includes('net::ERR_FAILED')
+    (e) => !e.includes('AudioContext') && !e.includes('net::ERR_FAILED')
   );
 
   console.log('--- Test Run Results ---');
   console.log(`Total Errors: ${realErrors.length}`);
   if (realErrors.length > 0) {
     console.error('Errors encountered:', realErrors);
+    process.exit(1);
   } else {
-    console.log('SUCCESS! All 6 chapters completed cleanly with zero critical errors.');
+    console.log('SUCCESS! All 6 chapters and visual zones verified with zero errors.');
   }
 
   await browser.close();

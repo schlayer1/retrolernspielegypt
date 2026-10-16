@@ -67,6 +67,167 @@ export const HOUSE_FRAMES: Record<string, [number, number, number, number]> = {
   house_large: [96, 0, 48, 48],      // 2-stöckiges Palasthaus mit Dachterrasse
 };
 
+/**
+ * Benannte 16-Bit-Pixel-Art-Frames aus Ancient Egyptian City B01 (768x768, 48px-Raster).
+ */
+export const CITY_B01_FRAMES: Record<string, [number, number, number, number]> = {
+  // Sandstein-Pflasterböden
+  floor_sandstone_1: [384, 0, 48, 48],
+  floor_sandstone_2: [432, 0, 48, 48],
+  floor_sandstone_3: [480, 0, 48, 48],
+  floor_plaza_slab: [576, 0, 96, 96],
+  // Tempel, Paläste & Bauwerke (96x96)
+  temple_pylon: [384, 96, 96, 96],
+  temple_ornate: [480, 96, 96, 96],
+  temple_sanctum: [576, 96, 96, 96],
+  temple_shrine: [672, 96, 96, 96],
+  temple_courtyard: [384, 192, 96, 96],
+  palace_colonnade: [384, 288, 96, 96],
+  granary_compound: [288, 384, 96, 96],
+  scribes_house: [96, 480, 96, 96],
+  vizier_palace: [288, 480, 96, 96],
+  // Kleinere Stufenpyramiden / Nebenpyramiden (96x96)
+  pyramid_queen: [0, 192, 96, 96],
+  pyramid_step: [192, 192, 96, 96],
+  // Marktstände (48x48)
+  stall_green: [480, 384, 48, 48],
+  stall_cyan: [528, 384, 48, 48],
+  stall_red: [480, 432, 48, 48],
+  stall_blue: [480, 480, 48, 48],
+  stall_striped: [528, 480, 48, 48],
+  // Obelisken & Sphingen (48x96)
+  obelisk_tall_1: [576, 384, 48, 96],
+  obelisk_tall_2: [624, 384, 48, 96],
+  sphinx_statue_1: [672, 384, 48, 96],
+  sphinx_statue_2: [720, 384, 48, 96],
+  // Authentische Nilschiffe (96x96)
+  nile_felucca: [576, 480, 96, 96],
+  nile_cargo_barge: [672, 480, 96, 96],
+  // Götter- & Pharaonenstatuen (48x48)
+  statue_anubis: [0, 576, 48, 48],
+  statue_horus: [96, 576, 48, 48],
+  statue_isis: [144, 576, 48, 48],
+  statue_pharaoh: [288, 576, 48, 48],
+  statue_lion_l: [480, 576, 48, 48],
+  statue_lion_r: [528, 576, 48, 48],
+  statue_thoth: [48, 624, 48, 48],
+  statue_osiris: [192, 624, 48, 48],
+  throne_gold: [96, 672, 48, 48],
+  // Kanopen, Balsamierungstische, Sarkophage & Truhen (48x48)
+  canopic_falcon: [192, 672, 48, 48],
+  canopic_jackal: [240, 672, 48, 48],
+  table_embalm: [288, 672, 48, 48],
+  table_scribes: [336, 672, 48, 48],
+  table_offering: [384, 672, 48, 48],
+  papyrus_clump_tall: [576, 576, 48, 48],
+  papyrus_planter: [624, 624, 48, 48],
+  handcart_wood: [672, 576, 48, 48],
+  sarcophagus_gold: [48, 720, 48, 48],
+  sarcophagus_royal: [144, 720, 48, 48],
+  sarcophagus_lapis: [240, 720, 48, 48],
+  chest_sandstone: [288, 720, 48, 48],
+  chest_turquoise: [336, 720, 48, 48],
+  chest_crimson: [384, 720, 48, 48],
+  chest_royal: [432, 720, 48, 48],
+};
+
+/**
+ * Benannte 16-Bit-Pixel-Art-Frames aus Ancient Egyptian City B02 (768x768, 48px-Raster).
+ */
+export const CITY_B02_FRAMES: Record<string, [number, number, number, number]> = {
+  stonemason_yard: [288, 288, 96, 96],
+  brick_drying_yard: [96, 288, 96, 96],
+  palm_tall_1: [240, 384, 48, 96],
+  palm_tall_2: [288, 384, 48, 96],
+  water_basin_round: [144, 528, 48, 48],
+  water_basin_square: [192, 528, 48, 48],
+  market_table_pots: [384, 528, 48, 48],
+  market_table_spices: [480, 528, 48, 48],
+  market_table_fruits: [528, 528, 48, 48],
+  cargo_wagon_full: [624, 528, 48, 48],
+  stele_nilometer: [144, 576, 48, 48],
+  stone_blocks_pile: [288, 576, 48, 48],
+  pillar_sandstone_1: [528, 576, 48, 96],
+  pillar_sandstone_2: [576, 576, 48, 96],
+  amphora_red: [480, 624, 48, 48],
+  clay_vat_mud: [528, 624, 48, 48],
+  amphora_decorated: [192, 720, 48, 48],
+  tool_shovel: [576, 720, 48, 48],
+  tool_pickaxe: [624, 720, 48, 48],
+};
+
+/**
+ * Benannte 16-Bit-Pixel-Art-Frames aus Ancient Egyptian City B03 (768x768, 48px-Raster).
+ */
+export const CITY_B03_FRAMES: Record<string, [number, number, number, number]> = {
+  hieroglyph_altar: [288, 96, 96, 96],
+  carpet_royal: [384, 336, 96, 48],
+  table_grain_sacks: [192, 432, 96, 48],
+  stall_fish_dates: [480, 432, 96, 96],
+  stall_pottery: [576, 432, 96, 96],
+  stall_linen: [672, 432, 96, 96],
+  wall_brick_build: [192, 528, 96, 48],
+  canopy_gold: [480, 576, 96, 96],
+  canopy_red: [576, 576, 96, 96],
+};
+
+/**
+ * Benannte 16-Bit-Pixel-Art-Frames aus Ancient Egyptian City B04 (768x768, 48px-Raster).
+ */
+export const CITY_B04_FRAMES: Record<string, [number, number, number, number]> = {
+  kiln_dome: [48, 0, 48, 48],
+  brick_kiln: [192, 0, 48, 48],
+  furnace_square: [144, 48, 48, 48],
+  // Bewässerungskanäle & Schleusen
+  canal_h: [384, 480, 48, 48],
+  canal_v: [192, 384, 48, 48],
+  canal_sluice: [576, 384, 48, 48],
+  canal_bridge: [576, 480, 48, 48],
+  // Ernte, Säcke & Baustoffe
+  grain_basket: [48, 576, 48, 48],
+  grain_sack_bound: [144, 576, 48, 48],
+  wheat_sheaf: [336, 576, 48, 48],
+  grain_crate: [240, 672, 48, 48],
+  limestone_blocks: [288, 720, 48, 48],
+  timber_logs: [336, 720, 48, 48],
+  workbench_craft: [528, 720, 48, 48],
+  workbench_mortar: [576, 720, 48, 48],
+};
+
+/**
+ * Benannte 16-Bit-Pixel-Art-Frames aus Ancient Egyptian City B05 (768x768, 48px-Raster).
+ */
+export const CITY_B05_FRAMES: Record<string, [number, number, number, number]> = {
+  bazaar_grand_red: [576, 96, 96, 96],
+  bazaar_punt_incense: [576, 192, 96, 96],
+  bazaar_spice_tent: [672, 192, 96, 96],
+  crate_wood: [288, 192, 48, 48],
+  barrel_wood: [336, 240, 48, 48],
+};
+
+/**
+ * Benannte 16-Bit-Pixel-Art-Frames aus Fishing Village Port (768x768, 48px-Raster).
+ */
+export const PORT_FRAMES: Record<string, [number, number, number, number]> = {
+  fish_trap_wicker: [576, 96, 48, 48],
+  fish_baskets_group: [624, 96, 48, 48],
+  fishing_net_drying: [192, 96, 96, 96],
+  drying_fish_rack: [288, 480, 96, 96],
+  crane_beam_wood: [576, 192, 96, 96],
+  port_bollard: [480, 624, 48, 48],
+  fish_crate_full: [192, 528, 48, 48],
+};
+
+/**
+ * Benannte 16-Bit-Pixel-Art-Frames aus Desert Natural Environment B01 (768x768).
+ */
+export const NATURE_FRAMES: Record<string, [number, number, number, number]> = {
+  oasis_pool_small: [192, 384, 96, 96],
+  oasis_pool_large: [192, 480, 144, 96],
+  desert_outcrop: [576, 192, 144, 96],
+  dune_large: [192, 0, 96, 96],
+};
+
 /** Benannte Ausschnitte aus gfx/objects.png. */
 export const OBJECT_FRAMES: Record<string, [number, number, number, number]> = {
   stump: [0, 160, 32, 32],
@@ -102,6 +263,16 @@ export class BootScene extends Phaser.Scene {
     this.load.image('objects', 'assets/gfx/objects.png');
     this.load.image('farm', 'assets/gfx/farm.png');
 
+    // 1b. Ägyptische 16-Bit-Stadt-, Hafen- & Natur-Tilesets
+    this.load.image('city_b01', 'assets/tilesets/city/egypt_city_b01.png');
+    this.load.image('city_b02', 'assets/tilesets/city/egypt_city_b02.png');
+    this.load.image('city_b03', 'assets/tilesets/city/egypt_city_b03.png');
+    this.load.image('city_b04', 'assets/tilesets/city/egypt_city_b04.png');
+    this.load.image('city_b05', 'assets/tilesets/city/egypt_city_b05.png');
+    this.load.image('port_tiles', 'assets/tilesets/city/port_tiles.png');
+    this.load.image('desert_nature', 'assets/tilesets/city/desert_nature_b01.png');
+    this.load.image('desert_ruins', 'assets/tilesets/city/desert_ruins_b01.png');
+
     // 2. Ägyptische Spielfiguren & NPCs (16x32 Spritesheets, 4-Wege-Animationen)
     this.load.spritesheet('player_egypt_male', 'assets/gfx/player_egypt_male.png', { frameWidth: 16, frameHeight: 32 });
     this.load.spritesheet('player_egypt_female', 'assets/gfx/player_egypt_female.png', { frameWidth: 16, frameHeight: 32 });
@@ -115,27 +286,17 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet('npc_guard', 'assets/gfx/npcs/npc_guard.png', { frameWidth: 16, frameHeight: 32 });
     this.load.spritesheet('npc_mummy', 'assets/gfx/npcs/npc_mummy.png', { frameWidth: 16, frameHeight: 32 });
 
-    // 2b. Tiere des Nils (Pflugochse & Ziege)
+    // 2b. Tiere des Nils & Fackelfeuer
     this.load.spritesheet('animal_cow', 'assets/gfx/cow.png', { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet('animal_goat', 'assets/gfx/goat.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('dungeon_fire', 'assets/egypt/dungeon_fire.png', { frameWidth: 32, frameHeight: 32 });
 
-    // 3. Authentische Monumente, Schiffe & City-Tiles
+    // 3. Authentische Monumente
     this.load.image('egypt_pyramid', 'assets/egypt/Pyramid.png');
     this.load.image('egypt_sphinx', 'assets/egypt/LionSphinx.png');
     this.load.image('egypt_pillar', 'assets/egypt/Pillar.png');
     this.load.image('egypt_debris', 'assets/egypt/Debris.png');
     this.load.image('egypt_palm_alt', 'assets/egypt/PalmTree2.png');
-    this.load.image('city_b01', 'assets/tilesets/city/egypt_city_b01.png');
-    this.load.image('city_b04', 'assets/tilesets/city/egypt_city_b04.png');
-    this.load.image('port_tiles', 'assets/tilesets/city/port_tiles.png');
-    this.load.image('egypt_boat', 'assets/egypt/papyrus_boat.png');
-    this.load.image('egypt_cargo_ship', 'assets/egypt/cargo_ship.png');
-    this.load.image('egypt_sarcophagus', 'assets/egypt/sarcophagus.png');
-    this.load.image('egypt_hieroglyph_wall', 'assets/egypt/hieroglyph_wall.png');
-    this.load.image('egypt_market_stall', 'assets/egypt/market_stall_mega.png');
-    this.load.image('egypt_tent', 'assets/egypt/tent_mega.png');
-    this.load.image('egypt_obelisk', 'assets/egypt/obelisk_mega.png');
-    this.load.image('egypt_treasure_chest', 'assets/egypt/treasure_chest.png');
 
     // 4. Didaktische 16-Bit-Item-Icons
     for (const id of Object.keys(ITEMS)) {
@@ -150,17 +311,25 @@ export class BootScene extends Phaser.Scene {
     state.skipStartScreen = params.has('kapitel') || params.has('direkt');
 
     // Frame-Zuschnitte registrieren
-    const dt = this.textures.get('desert_tileset');
-    for (const [name, [x, y, fw, fh]] of Object.entries(DESERT_FRAMES)) dt.add(name, 0, x, y, fw, fh);
+    const registerFrames = (texKey: string, map: Record<string, [number, number, number, number]>) => {
+      if (!this.textures.exists(texKey)) return;
+      const tex = this.textures.get(texKey);
+      for (const [name, [x, y, fw, fh]] of Object.entries(map)) {
+        tex.add(name, 0, x, y, fw, fh);
+      }
+    };
 
-    const dh = this.textures.get('desert_houses');
-    for (const [name, [x, y, fw, fh]] of Object.entries(HOUSE_FRAMES)) dh.add(name, 0, x, y, fw, fh);
-
-    const ob = this.textures.get('objects');
-    for (const [name, [x, y, fw, fh]] of Object.entries(OBJECT_FRAMES)) ob.add(name, 0, x, y, fw, fh);
-
-    const fm = this.textures.get('farm');
-    for (const [name, [x, y, fw, fh]] of Object.entries(FARM_FRAMES)) fm.add(name, 0, x, y, fw, fh);
+    registerFrames('desert_tileset', DESERT_FRAMES);
+    registerFrames('desert_houses', HOUSE_FRAMES);
+    registerFrames('objects', OBJECT_FRAMES);
+    registerFrames('farm', FARM_FRAMES);
+    registerFrames('city_b01', CITY_B01_FRAMES);
+    registerFrames('city_b02', CITY_B02_FRAMES);
+    registerFrames('city_b03', CITY_B03_FRAMES);
+    registerFrames('city_b04', CITY_B04_FRAMES);
+    registerFrames('city_b05', CITY_B05_FRAMES);
+    registerFrames('port_tiles', PORT_FRAMES);
+    registerFrames('desert_nature', NATURE_FRAMES);
 
     // Filter-Modus für scharfe Retro-Icons
     for (const id of Object.keys(ITEMS)) {
@@ -204,21 +373,27 @@ export class BootScene extends Phaser.Scene {
       });
     });
 
-    // NPC-Idle-Animationen
+    // NPC-Animationen (sanftes Atmen / Umsehen)
     const npcIds = ['senbi', 'ameni', 'kheti', 'nefermaat', 'ani', 'hemiunu', 'baki', 'guard', 'mummy'];
     npcIds.forEach((id) => {
       this.anims.create({
         key: `idle-${id}`,
-        frames: [{ key: `npc_${id}`, frame: 0 }],
-        frameRate: 1,
+        frames: [
+          { key: `npc_${id}`, frame: 0 },
+          { key: `npc_${id}`, frame: 1 },
+          { key: `npc_${id}`, frame: 0 },
+        ],
+        frameRate: 1.5,
+        repeat: -1,
       });
     });
 
     // Tier-Animationen (Nilkuh & Ziege)
     this.anims.create({
       key: 'idle-cow',
-      frames: [{ key: 'animal_cow', frame: 0 }],
-      frameRate: 1,
+      frames: this.anims.generateFrameNumbers('animal_cow', { start: 0, end: 3 }),
+      frameRate: 2.5,
+      repeat: -1,
     });
     this.anims.create({
       key: 'walk-cow',
@@ -228,8 +403,9 @@ export class BootScene extends Phaser.Scene {
     });
     this.anims.create({
       key: 'idle-goat',
-      frames: [{ key: 'animal_goat', frame: 0 }],
-      frameRate: 1,
+      frames: this.anims.generateFrameNumbers('animal_goat', { start: 0, end: 3 }),
+      frameRate: 3,
+      repeat: -1,
     });
     this.anims.create({
       key: 'walk-goat',
@@ -238,11 +414,17 @@ export class BootScene extends Phaser.Scene {
       repeat: -1,
     });
 
-    // Animiertes Lagerfeuer
+    // Animiertes Lagerfeuer & Tempel-Feuerschalen
     this.anims.create({
       key: 'fire',
       frames: Array.from({ length: 7 }, (_, i) => ({ key: 'objects', frame: `fire${i}` })),
       frameRate: 10,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: 'torch_fire',
+      frames: this.anims.generateFrameNumbers('dungeon_fire', { start: 0, end: 2 }),
+      frameRate: 8,
       repeat: -1,
     });
 
@@ -255,57 +437,27 @@ export class BootScene extends Phaser.Scene {
   }
 
   private createCustomSprites(): void {
-    // 1. Schaduf-Schöpfwerk
+    // Detaillierter 16-Bit Pixel-Art Schaduf (Wippkran mit Lehm-Gegengewicht, Holzstütze & Wassereimer)
     const gs = this.add.graphics();
-    gs.fillStyle(0x6b4226, 1).fillRect(14, 12, 4, 18);
-    gs.fillStyle(0x8b5a2b, 1).fillRect(4, 8, 24, 3);
-    gs.fillStyle(0x3e3d47, 1).fillRect(4, 5, 6, 6);
-    gs.fillStyle(0x358dbf, 1).fillRect(24, 14, 2, 8);
-    gs.fillStyle(0x2774a3, 1).fillRect(23, 22, 4, 4);
-    gs.generateTexture('schaduf_prop', 32, 32);
+    // Steinsockel
+    gs.fillStyle(0x8c734b, 1).fillRect(10, 32, 16, 8);
+    gs.fillStyle(0xb59b6d, 1).fillRect(12, 33, 12, 5);
+    // Aufrechter Akazien-Stützpfeiler mit Astgabel
+    gs.fillStyle(0x5c3a21, 1).fillRect(16, 12, 4, 22);
+    gs.fillStyle(0x7c4f2b, 1).fillRect(17, 13, 2, 20);
+    gs.fillStyle(0x472b16, 1).fillRect(14, 10, 8, 3);
+    // Langer schräger Wippbalken (Hebelarm)
+    gs.fillStyle(0x8b5a2b, 1).fillRect(4, 9, 32, 3);
+    gs.fillStyle(0xa8723d, 1).fillRect(5, 9, 30, 1);
+    // Schweres Nilschlamm-Gegengewicht (links)
+    gs.fillStyle(0x3b3530, 1).fillRect(2, 6, 8, 8);
+    gs.fillStyle(0x574e47, 1).fillRect(3, 7, 6, 6);
+    // Seil & gefüllter Schöpfeimer (rechts über dem Kanal)
+    gs.fillStyle(0xd6c096, 1).fillRect(33, 12, 2, 14);
+    gs.fillStyle(0x7c4f2b, 1).fillRect(30, 26, 8, 7);
+    gs.fillStyle(0x38bdf8, 1).fillRect(31, 26, 6, 3);
+    gs.generateTexture('schaduf_prop', 42, 42);
     gs.destroy();
-
-    // 2. Nilometer
-    const gn = this.add.graphics();
-    gn.fillStyle(0xd9c298, 1).fillRect(2, 4, 12, 28);
-    gn.fillStyle(0x8c734b, 1).fillRect(2, 4, 12, 2).fillRect(2, 30, 12, 2);
-    gn.fillStyle(0x1e293b, 1);
-    for (let y = 8; y < 28; y += 4) {
-      gn.fillRect(4, y, 8, 2);
-    }
-    gn.generateTexture('nilometer_prop', 16, 32);
-    gn.destroy();
-
-    // 3. Ziegelei-Ofen (kiln)
-    const gk = this.add.graphics();
-    gk.fillStyle(0x78350f, 1).fillRect(2, 6, 28, 24);
-    gk.fillStyle(0xd97706, 1).fillRect(6, 10, 20, 16);
-    gk.fillStyle(0x1e1b18, 1).fillRect(10, 16, 12, 10);
-    gk.fillStyle(0xf59e0b, 1).fillRect(12, 18, 8, 6);
-    gk.generateTexture('kiln', 32, 32);
-    gk.destroy();
-
-    // 4. Schreiber-Webstuhl (loom)
-    const gl = this.add.graphics();
-    gl.fillStyle(0x6b4226, 1).fillRect(2, 4, 28, 4).fillRect(4, 8, 4, 20).fillRect(24, 8, 4, 20);
-    gl.fillStyle(0xf8fafc, 1).fillRect(8, 10, 16, 14);
-    gl.generateTexture('loom', 32, 32);
-    gl.destroy();
-
-    // 5. Balsamierungs-Ofen (smelter)
-    const gm = this.add.graphics();
-    gm.fillStyle(0x475569, 1).fillRect(4, 6, 24, 24);
-    gm.fillStyle(0x94a3b8, 1).fillRect(8, 10, 16, 16);
-    gm.fillStyle(0x9333ea, 1).fillRect(12, 14, 8, 8);
-    gm.generateTexture('smelter', 32, 32);
-    gm.destroy();
-
-    // 6. Bauhütte/Steinmetz (forge)
-    const gp = this.add.graphics();
-    gp.fillStyle(0x334155, 1).fillRect(4, 8, 32, 24);
-    gp.fillStyle(0xfde047, 1).fillRect(8, 12, 24, 16);
-    gp.generateTexture('forge', 40, 36);
-    gp.destroy();
   }
 
   /** Extrahiert scharfe Data-URLs der Spielgrafiken für den Start- und Pausescreen. */
