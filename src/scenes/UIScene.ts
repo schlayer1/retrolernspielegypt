@@ -40,7 +40,18 @@ const TERM_REGEX = new RegExp(
 );
 
 function highlightTerms(text: string): string {
-  const escaped = escapeHtml(text);
+  if (!text) return '';
+  const escaped = escapeHtml(text)
+    .replace(/&lt;strong&gt;/gi, '<strong>')
+    .replace(/&lt;\/strong&gt;/gi, '</strong>')
+    .replace(/&lt;b&gt;/gi, '<b>')
+    .replace(/&lt;\/b&gt;/gi, '</b>')
+    .replace(/&lt;em&gt;/gi, '<em>')
+    .replace(/&lt;\/em&gt;/gi, '</em>')
+    .replace(/&lt;i&gt;/gi, '<i>')
+    .replace(/&lt;\/i&gt;/gi, '</i>')
+    .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
+    .replace(/\n/g, '<br>');
   return escaped.replace(TERM_REGEX, '<span class="didactic-term">$1</span>');
 }
 

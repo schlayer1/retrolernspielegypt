@@ -771,8 +771,8 @@ export class WorldScene extends Phaser.Scene {
       kheti.sprite.anims.play('idle-kheti', true);
       kheti.label = this.addLabel(520, 157, '👩‍🌾 Bäuerin Kheti', '#86efac');
 
-      // Belebte Nil-Nutztiere (Pflugochse & Ziege bewegen sich sanft auf der Weide, ohne Wege zu blockieren)
-      const ox = this.add.sprite(388, 295, 'animal_cow', 0).setDepth(295);
+      // Belebte Nil-Nutztiere (Pflugochse, Ziege & Dorfhuhn - maßstabsgerecht & animiert)
+      const ox = this.add.sprite(388, 295, 'animal_cow', 0).setScale(0.42).setDepth(295);
       ox.anims.play('idle-cow', true);
       this.wanderingAnimals.push({
         sprite: ox,
@@ -785,7 +785,7 @@ export class WorldScene extends Phaser.Scene {
         idleAnim: 'idle-cow',
       });
 
-      const goat1 = this.add.sprite(418, 312, 'animal_goat', 0).setDepth(312);
+      const goat1 = this.add.sprite(418, 312, 'animal_goat', 0).setScale(0.38).setDepth(312);
       goat1.anims.play('idle-goat', true);
       this.wanderingAnimals.push({
         sprite: goat1,
@@ -796,6 +796,19 @@ export class WorldScene extends Phaser.Scene {
         timer: 1400,
         walkAnim: 'walk-goat',
         idleAnim: 'idle-goat',
+      });
+
+      const chicken1 = this.add.sprite(442, 296, 'animal_chicken', 0).setScale(0.28).setDepth(296);
+      chicken1.anims.play('idle-chicken', true);
+      this.wanderingAnimals.push({
+        sprite: chicken1,
+        homeX: 442,
+        homeY: 296,
+        vx: 0,
+        vy: 0,
+        timer: 1600,
+        walkAnim: 'walk-chicken',
+        idleAnim: 'idle-chicken',
       });
     }
 
@@ -874,6 +887,71 @@ export class WorldScene extends Phaser.Scene {
         node.sprite.setDepth(py);
         this.refreshPlotVisual(node);
       }
+    }
+
+    // Authentische ägyptische Tierwelt (Fauna des Nils, Tempels & der Wüste)
+    this.placeEgyptianFauna();
+  }
+
+  /**
+   * Platziert authentische Fauna des Alten Ägypten:
+   * - Schwimmende Nil-Enten & Reihervögel am Nilufer (ab Kap. 1)
+   * - Rosa-Flamingos auf der Sandbank im Nilwasser (ab Kap. 1)
+   * - Heiliger Ibis von Thoth am Schilfgürtel (ab Kap. 1)
+   * - Heiliger Pavian des Thoth & Horus-Falke am Tempel (ab Kap. 4)
+   * - Dorcas-Wüstengazellen in den Dünen bei Gizeh (ab Kap. 5)
+   */
+  private placeEgyptianFauna(): void {
+    const ch = state.chapter;
+
+    // A. Nil-Enten (schwimmen friedlich im Flusswasser)
+    const duck1 = this.add.sprite(646, 348, 'animal_duck', 0).setScale(1.0).setDepth(348);
+    duck1.anims.play('swim-duck', true);
+    this.wanderingAnimals.push({
+      sprite: duck1,
+      homeX: 646,
+      homeY: 348,
+      vx: 0,
+      vy: 0,
+      timer: 1800,
+      walkAnim: 'swim-duck',
+      idleAnim: 'swim-duck',
+    });
+
+    const duck2 = this.add.sprite(678, 376, 'animal_duck', 0).setScale(1.0).setDepth(376);
+    duck2.anims.play('swim-duck', true);
+    this.wanderingAnimals.push({
+      sprite: duck2,
+      homeX: 678,
+      homeY: 376,
+      vx: 0,
+      vy: 0,
+      timer: 2400,
+      walkAnim: 'swim-duck',
+      idleAnim: 'swim-duck',
+    });
+
+    // B. Nil-Singvogel / Reihervogel (pickt am Schilfrand)
+    const bird1 = this.add.sprite(525, 345, 'animal_bird', 0).setScale(1.0).setDepth(345);
+    bird1.anims.play('idle-bird', true);
+
+    // C. Heiliger Ibis von Thoth (weißes Schilf-Wasservogel am Papyrusdickicht)
+    this.add.image(575, 362, 'zoo_b02', 'ibis_r').setScale(0.52).setDepth(362);
+
+    // D. Rosa-Flamingos (waten in der seichten Sandbank am Nilufer)
+    this.add.image(612, 425, 'zoo_b02', 'flamingo_r').setScale(0.55).setDepth(425);
+    this.add.image(628, 422, 'zoo_b02', 'flamingo_l').setScale(0.52).setDepth(422);
+
+    // E. Tempel-Fauna (ab Kap. 4: Horus-Falke auf dem Pylon & Pavian im Hof)
+    if (ch >= 4) {
+      this.add.image(380, 140, 'zoo_b02', 'falcon_1').setScale(0.5).setDepth(145);
+      this.add.image(285, 338, 'zoo_b02', 'baboon_seated').setScale(0.5).setDepth(338);
+    }
+
+    // F. Wüsten-Fauna (ab Kap. 5: Dorcas-Gazellenbock & Gazellenkuh an den offenen Gizeh-Dünen)
+    if (ch >= 5) {
+      this.add.image(65, 75, 'zoo_b02', 'gazelle_buck').setScale(0.55).setDepth(75);
+      this.add.image(82, 80, 'zoo_b02', 'gazelle_doe').setScale(0.5).setDepth(80);
     }
   }
 

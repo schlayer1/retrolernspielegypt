@@ -246,6 +246,19 @@ export const FARM_FRAMES: Record<string, [number, number, number, number]> = {
   sign_build: [288, 96, 16, 16],
 };
 
+/** Benannte 16-Bit-Fauna-Frames aus dem Zoo-Tileset (768x768). */
+export const ZOO_B02_FRAMES: Record<string, [number, number, number, number]> = {
+  flamingo_r: [480, 96, 48, 48],
+  flamingo_l: [528, 96, 48, 48],
+  ibis_r: [480, 240, 48, 48],
+  ibis_l: [528, 240, 48, 48],
+  falcon_1: [576, 96, 48, 48],
+  falcon_2: [624, 96, 48, 48],
+  gazelle_buck: [480, 336, 48, 48],
+  gazelle_doe: [384, 336, 48, 48],
+  baboon_seated: [384, 48, 48, 48],
+};
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot');
@@ -272,6 +285,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('port_tiles', 'assets/tilesets/city/port_tiles.png');
     this.load.image('desert_nature', 'assets/tilesets/city/desert_nature_b01.png');
     this.load.image('desert_ruins', 'assets/tilesets/city/desert_ruins_b01.png');
+    this.load.image('zoo_b02', 'assets/tilesets/zoo/tile-B-02.png');
 
     // 2. Ägyptische Spielfiguren & NPCs (16x32 Spritesheets, 4-Wege-Animationen)
     this.load.spritesheet('player_egypt_male', 'assets/gfx/player_egypt_male.png', { frameWidth: 16, frameHeight: 32 });
@@ -286,9 +300,12 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet('npc_guard', 'assets/gfx/npcs/npc_guard.png', { frameWidth: 16, frameHeight: 32 });
     this.load.spritesheet('npc_mummy', 'assets/gfx/npcs/npc_mummy.png', { frameWidth: 16, frameHeight: 32 });
 
-    // 2b. Tiere des Nils & Fackelfeuer
-    this.load.spritesheet('animal_cow', 'assets/gfx/cow.png', { frameWidth: 32, frameHeight: 32 });
-    this.load.spritesheet('animal_goat', 'assets/gfx/goat.png', { frameWidth: 32, frameHeight: 32 });
+    // 2b. Tiere des Nils, Fackelfeuer & Ägyptische Fauna
+    this.load.spritesheet('animal_cow', 'assets/gfx/cow.png', { frameWidth: 80, frameHeight: 80 });
+    this.load.spritesheet('animal_goat', 'assets/gfx/goat.png', { frameWidth: 80, frameHeight: 80 });
+    this.load.spritesheet('animal_chicken', 'assets/gfx/chicken.png', { frameWidth: 80, frameHeight: 80 });
+    this.load.spritesheet('animal_duck', 'assets/gfx/duck.png', { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('animal_bird', 'assets/gfx/bird.png', { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('dungeon_fire', 'assets/egypt/dungeon_fire.png', { frameWidth: 32, frameHeight: 32 });
 
     // 3. Authentische Monumente
@@ -335,6 +352,7 @@ export class BootScene extends Phaser.Scene {
     registerFrames('city_b05', CITY_B05_FRAMES);
     registerFrames('port_tiles', PORT_FRAMES);
     registerFrames('desert_nature', NATURE_FRAMES);
+    registerFrames('zoo_b02', ZOO_B02_FRAMES);
 
     // Filter-Modus für scharfe Retro-Icons
     for (const id of Object.keys(ITEMS)) {
@@ -393,11 +411,11 @@ export class BootScene extends Phaser.Scene {
       });
     });
 
-    // Tier-Animationen (Nilkuh & Ziege)
+    // Tier-Animationen (Nilkuh, Ziege, Dorfhuhn, Nilente & Singvogel)
     this.anims.create({
       key: 'idle-cow',
-      frames: this.anims.generateFrameNumbers('animal_cow', { start: 0, end: 3 }),
-      frameRate: 2.5,
+      frames: [{ key: 'animal_cow', frame: 0 }],
+      frameRate: 1,
       repeat: -1,
     });
     this.anims.create({
@@ -408,14 +426,38 @@ export class BootScene extends Phaser.Scene {
     });
     this.anims.create({
       key: 'idle-goat',
-      frames: this.anims.generateFrameNumbers('animal_goat', { start: 0, end: 3 }),
-      frameRate: 3,
+      frames: [{ key: 'animal_goat', frame: 0 }],
+      frameRate: 1,
       repeat: -1,
     });
     this.anims.create({
       key: 'walk-goat',
       frames: this.anims.generateFrameNumbers('animal_goat', { start: 4, end: 7 }),
+      frameRate: 4,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: 'idle-chicken',
+      frames: [{ key: 'animal_chicken', frame: 0 }],
+      frameRate: 1,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: 'walk-chicken',
+      frames: this.anims.generateFrameNumbers('animal_chicken', { start: 4, end: 7 }),
       frameRate: 5,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: 'swim-duck',
+      frames: this.anims.generateFrameNumbers('animal_duck', { start: 0, end: 3 }),
+      frameRate: 3.5,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: 'idle-bird',
+      frames: this.anims.generateFrameNumbers('animal_bird', { start: 0, end: 3 }),
+      frameRate: 3,
       repeat: -1,
     });
 
