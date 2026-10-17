@@ -227,46 +227,87 @@ export class WorldScene extends Phaser.Scene {
   private buildEgyptGround(): void {
     const rt = this.add.renderTexture(0, 0, MAP_W * TILE, MAP_H * TILE).setOrigin(0).setDepth(0);
 
+    const bayer4 = [
+      [0, 8, 2, 10],
+      [12, 4, 14, 6],
+      [3, 11, 1, 9],
+      [15, 7, 13, 5],
+    ];
+
+    const distToSeg = (px: number, py: number, x1: number, y1: number, x2: number, y2: number): number => {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const l2 = dx * dx + dy * dy;
+      if (l2 === 0) return Math.hypot(px - x1, py - y1);
+      const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / l2));
+      return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+    };
+
     for (let ty = 0; ty < MAP_H; ty++) {
+      // Organisch geschwungene Uferlinien statt starrer vertikaler Spalten
+      const siltBorder = 27.2 + Math.sin(ty * 0.24) * 1.45 + Math.cos(ty * 0.52) * 0.55;
+      const nileBorder = 37.1 + Math.sin(ty * 0.19 + 1.1) * 0.95 + Math.cos(ty * 0.43) * 0.35;
+
       for (let tx = 0; tx < MAP_W; tx++) {
         const px = tx * TILE;
         const py = ty * TILE;
+        const bayerVal = bayer4[ty % 4][tx % 4] / 16;
 
-        // A. Westliches Wüstengebiet (tx: 0..27)
-        if (tx < 28) {
-          const r = (tx * 7 + ty * 13) % 100;
-          let sandFrame = 'sand_1';
-          if (r < 42) sandFrame = 'sand_1';
-          else if (r < 76) sandFrame = 'sand_2';
-          else if (r < 88) sandFrame = 'sand_dune_1';
-          else if (r < 95) sandFrame = 'sand_dune_2';
-          else sandFrame = 'sand_ripples';
-
-          rt.drawFrame('desert_tileset', sandFrame, px, py);
-
-          // Dezente Kiesel- und Steinstreuung in der freien Wüste
-          if ((tx * 11 + ty * 17) % 37 === 0 && tx > 2 && ty > 4) {
-            const rockDeco = (tx + ty) % 2 === 0 ? 'pebbles' : 'stone_flat';
-            rt.drawFrame('desert_tileset', rockDeco, px, py);
-          }
+        // A. Der mächtige Nil (Iteru) mit sanfter Uferkante
+        if (tx > nileBorder + 0.45) {
+          const waterR = (tx * 3 + ty * 7) % 12;
+          const waterFrame = waterR === 0 || tx < nileBorder + 1.3 ? 'water_shallow' : 'water_deep';
+          rt.drawFrame('desert_tileset', waterFrame, px, py);
+          continue;
         }
-        // B. Fruchtbares Nilufer (Kemet: schwarzer Nilschlamm-Boden, tx: 28..37)
-        else if (tx >= 28 && tx <= 37) {
-          if (tx === 28) {
+
+        if (Math.abs(tx - nileBorder) <= 0.65) {
+          rt.drawFrame('desert_tileset', 'shore_w', px, py);
+          continue;
+        }
+
+        // B. Übergangszone & Fruchtbares Nilufer (Kemet vs. Deschret mit 4x4 Bayer-Dithering)
+        const siltDelta = tx - siltBorder;
+        const isKemet = siltDelta > 1.35 || (siltDelta > -1.35 && (siltDelta + 1.35) / 2.7 > bayerVal);
+
+        if (isKemet) {
+          if (Math.abs(siltDelta) < 0.55 && (tx + ty) % 2 === 0) {
             rt.drawFrame('desert_tileset', 'silt_transition_w', px, py);
-          } else if (tx === 37) {
-            rt.drawFrame('desert_tileset', 'shore_w', px, py);
           } else {
             const siltR = (tx * 5 + ty * 9) % 10;
             const siltFrame = siltR < 6 ? 'silt_dark' : siltR < 9 ? 'silt_patch' : 'silt_rich';
             rt.drawFrame('desert_tileset', siltFrame, px, py);
           }
-        }
-        // C. Der mächtige Nil (Wasserfläche, tx: 38..49)
-        else {
-          const waterR = (tx * 3 + ty * 7) % 12;
-          const waterFrame = waterR === 0 ? 'water_shallow' : 'water_deep';
-          rt.drawFrame('desert_tileset', waterFrame, px, py);
+        } else {
+          // Westliches Wüstengebiet (Deschret) mit organischen Karawanenpfaden
+          const dPath1 = distToSeg(tx, ty, 31, 20, 22, 11); // Nilufer -> Wesirpalast -> Gizeh
+          const dPath2 = distToSeg(tx, ty, 22, 11, 8, 9);   // Wesir -> Pyramidenplateau
+          const dPath3 = distToSeg(tx, ty, 31, 21, 14, 22); // Nilufer -> Tempelbezirk & Oase
+          const dPath = Math.min(dPath1, dPath2, dPath3);
+
+          const r = (tx * 7 + ty * 13) % 100;
+          let sandFrame = 'sand_1';
+          if (dPath < 1.35 && bayerVal < 0.75) {
+            sandFrame = (tx + ty) % 2 === 0 ? 'sand_ripples' : 'sand_2';
+          } else if (r < 42) {
+            sandFrame = 'sand_1';
+          } else if (r < 76) {
+            sandFrame = 'sand_2';
+          } else if (r < 88) {
+            sandFrame = 'sand_dune_1';
+          } else if (r < 95) {
+            sandFrame = 'sand_dune_2';
+          } else {
+            sandFrame = 'sand_ripples';
+          }
+
+          rt.drawFrame('desert_tileset', sandFrame, px, py);
+
+          // Dezente Kiesel- und Steinstreuung in der freien Wüste & an Pfadrändern
+          if (((tx * 11 + ty * 17) % 33 === 0 || (Math.abs(dPath - 1.5) < 0.35 && (tx + ty) % 5 === 0)) && tx > 2 && ty > 4) {
+            const rockDeco = (tx + ty) % 2 === 0 ? 'pebbles' : 'stone_flat';
+            rt.drawFrame('desert_tileset', rockDeco, px, py);
+          }
         }
       }
     }
