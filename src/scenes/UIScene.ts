@@ -1367,29 +1367,74 @@ export class UIScene extends Phaser.Scene {
   }
 
   private openTimeline(): void {
-    this.openModal('timeline', 'Epochen-Vergleich: Steinzeit vs. Altes Ägypten');
+    this.openModal('timeline', '⏳ Epochen-Zeitstrahl & Entwicklungsphasen am Nil (Z)');
     const rows = EPOCH_COMPARISON;
 
+    const rowsHtml = rows.map((r) => {
+      const isCurrent = r.chapter === state.chapter;
+      return `
+        <tr class="${isCurrent ? 'current-era' : ''}">
+          <td style="white-space:nowrap;"><strong>${escapeHtml(r.era)}</strong><br><span style="font-size:11.5px;color:#7c5835;font-weight:700;">${escapeHtml(r.time)}</span></td>
+          <td>${highlightTerms(r.housing)}</td>
+          <td>${highlightTerms(r.food)}</td>
+          <td>${highlightTerms(r.tools)}</td>
+          <td>${highlightTerms(r.society)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const merksaetzeHtml = [1, 2, 3, 4, 5, 6].map((ch) => {
+      const c = CHAPTERS[ch];
+      if (!c) return '';
+      return `
+        <div class="merksatz-box" style="margin-bottom:10px;background:#fffdf7;border:1.5px solid #d6c39c;border-radius:8px;padding:8px 12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;">
+            <strong style="color:#7a3b10;font-size:13px;">📒 ${escapeHtml(c.title)} (${escapeHtml(c.epoch)})</strong>
+            <div class="no-print" style="display:flex;gap:6px;">
+              <button class="retro-btn btn-speak-ch" data-speak-text="${escapeHtml(c.summary)}" style="padding:2px 7px;font-size:11px;">🔊 Vorlesen</button>
+            </div>
+          </div>
+          <div style="font-size:12.5px;color:#3b2310;line-height:1.4;">${highlightTerms(c.summary)}</div>
+        </div>
+      `;
+    }).join('');
+
     this.modalBodyEl.innerHTML = `
-      <table class="epoch-table">
-        <thead>
-          <tr>
-            <th>Historische Dimension</th>
-            <th>🦣 Steinzeit & Metallzeit</th>
-            <th>𓂀 Altes Ägypten (Hochkultur)</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.map((r) => `
+      <div style="margin-bottom:14px;overflow-x:auto;">
+        <table class="epoch-table">
+          <thead>
             <tr>
-              <td><strong>${escapeHtml(r.topic)}</strong></td>
-              <td>${escapeHtml(r.stoneage)}</td>
-              <td>${escapeHtml(r.egypt)}</td>
+              <th style="min-width:130px;">Epoche / Phase</th>
+              <th style="min-width:140px;">🏘️ Siedlung & Wohnen</th>
+              <th style="min-width:150px;">🌾 Nahrung & Wasser</th>
+              <th style="min-width:150px;">🏺 Technik & Monumente</th>
+              <th style="min-width:150px;">📜 Gesellschaft & Herrschaft</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="border-top:2px solid #e6d5b8;padding-top:12px;">
+        <h3 style="margin:0 0 10px 0;font-size:14px;color:#5a3818;font-weight:900;">📒 Didaktische Hefter-Merksätze der Kapitel:</h3>
+        ${merksaetzeHtml}
+      </div>
     `;
+
+    this.modalBodyEl.querySelectorAll('.btn-speak-ch').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const text = (btn as HTMLElement).dataset.speakText;
+        if (text && 'speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = 'de-DE';
+          u.rate = 0.95;
+          window.speechSynthesis.speak(u);
+        }
+      });
+    });
 
     this.modalFooterEl.innerHTML = '';
   }

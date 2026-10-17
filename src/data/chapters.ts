@@ -8,9 +8,13 @@ export interface LexiconEntry {
 }
 
 export interface EpochComparisonRow {
-  topic: string;
-  stoneage: string;
-  egypt: string;
+  era: string;
+  chapter: number;
+  time: string;
+  housing: string;
+  food: string;
+  tools: string;
+  society: string;
 }
 
 export interface ChapterDef {
@@ -60,34 +64,58 @@ export const HIGHLIGHT_TERMS: string[] = [
 
 export const EPOCH_COMPARISON: EpochComparisonRow[] = [
   {
-    topic: 'Siedlung & Lebensform',
-    stoneage: 'Nomadische Sippen in Zelten (später bäuerliche Langhäuser in Sippendörfern)',
-    egypt: 'Dichtbesiedelte Städte & Dörfer entlang des Nils, befestigte Gaue und Paläste',
+    era: '1. Frühzeit & Nilnomaden',
+    chapter: 1,
+    time: 'ca. 5.000 – 3.100 v. Chr.',
+    housing: 'Rastplätze & Schilfhütten an den Ufersäumen und Oasenrändern',
+    food: 'Fischfang mit Reusen & Speeren, Sammeln von Datteln und Wüstenfeigen',
+    tools: 'Schilfboote, Stein- und Knochenwerkzeuge, handgeformte Tonkrüge',
+    society: 'Nomadische Fischer- & Sammlersippen, Stammesälteste',
   },
   {
-    topic: 'Ernährung & Wasser',
-    stoneage: 'Jagd, Sammeln, später Regenfeldbau und Ziegentierhaltung',
-    egypt: 'Kanalbewässerung & Schaduf mit Nilschwemme, gezielter Emmer- & Flachsanbau',
+    era: '2. Frühdynastik & Bewässerung',
+    chapter: 2,
+    time: 'ca. 3.100 – 2.700 v. Chr.',
+    housing: 'Erste feste Bauerndörfer auf hochgelegenen Schwemmlandhügeln',
+    food: 'Systematischer Anbau von Emmer & Gerste, Ziegenzucht, Nilschwemme (Akhet)',
+    tools: 'Schaduf-Hebeltechnik, Nilometer zur Hochwassermessung, Holzpflüge',
+    society: 'Entstehung der Gaue (Bezirke), Gaumeister, Reichseinigung unter König Narmer',
   },
   {
-    topic: 'Herrschaft & Ordnung',
-    stoneage: 'Einfache Sippenälteste ohne Gesetzesbücher oder zentralen Staat',
-    egypt: 'Zentralstaat mit göttlichem Pharao an der Spitze, Wesir als Premierminister',
+    era: '3. Altes Reich & Staatsbildung',
+    chapter: 3,
+    time: 'ca. 2.700 – 2.200 v. Chr.',
+    housing: 'Dichtbesiedelte Städte aus Lehmziegeln, Residenz Memphis, Tempelbezirke',
+    food: 'Große Kornspeicheranlagen, geplante Vorratshaltung für Notjahre, Bäckereien & Brauereien',
+    tools: 'Lehmziegelöfen & Holzrahmen, Holzbalkenkonstruktionen, Töpferscheiben',
+    society: 'Zentralstaat unter dem Pharao als Gottkönig, Wesir leitet Finanzen & Bauverwaltung',
   },
   {
-    topic: 'Schrift & Verwaltung',
-    stoneage: 'Keine Schrift (mündliche Überlieferung & Höhlenmalereien)',
-    egypt: 'Hieroglyphen & hieratische Schrift, Steuerlisten, Gesetze und Archive',
+    era: '4. Mittleres Reich & Schriftkultur',
+    chapter: 4,
+    time: 'ca. 2.050 – 1.650 v. Chr.',
+    housing: 'Planstädte für Priester, Schreiber und Beamte, Palastanlagen und Archive',
+    food: 'Exakte staatliche Rationenlisten, Abgaben an die Reichsspeicher',
+    tools: 'Papyrusherstellung, Binsenrohre, Ruß- und Ockertinten, Hieroglyphen & Hieratisch',
+    society: 'Geachteter Schreiberstand („Schreiber sein ist Freiheit“), Bibliotheken & Rechtsarchive',
   },
   {
-    topic: 'Glaube & Jenseits',
-    stoneage: 'Naturgeister, Ahnenkult, Tierknochen- und Fruchtbarkeitsidole',
-    egypt: 'Vielgötterglaube (Polytheismus), Totengericht (Maat), Mumifizierung & Pyramiden',
+    era: '5. Pyramiden- & Monumentalbau',
+    chapter: 5,
+    time: 'ca. 2.600 – 1.500 v. Chr.',
+    housing: 'Große Arbeiterstädte bei Gizeh und Sakkara, Kasernen und Werkstätten',
+    food: 'Tägliche Fleisch-, Brot- und Bierrationen für Zehntausende Arbeiter & Steinmetze',
+    tools: 'Kalksteinquader-Abbau, Kupfermeißel, Holzschlitten, Schrägrampen & Hebelbäume',
+    society: 'Perfekt organisierte Bau-Brigaden während der Nilschwemme, Baumeister & Architekten',
   },
   {
-    topic: 'Bauwerke & Technik',
-    stoneage: 'Meglithgräber (Dolmen), Holzpfostenhäuser, Stein- & Bronzewerkzeuge',
-    egypt: 'Monumentale Steinarchitektur (Pyramiden, Obelisken, Tempel) mit Hebeltechnik',
+    era: '6. Neues Reich & Welthandel',
+    chapter: 6,
+    time: 'ca. 1.550 – 1.070 v. Chr.',
+    housing: 'Prachtvolle Weltstädte Theben und Pi-Ramesse, internationale Flusshäfen',
+    food: 'Kornexport im gesamten Mittelmeerraum, Import von Zedernholz, Gold & Gewürzen',
+    tools: 'Große Nilschiffe, Bronzeguss, Streitwagen, Glasmanufaktur & Feinmetallurgie',
+    society: 'Internationale Großmacht, weltweites Handels- & Diplomatennetzwerk, stehendes Heer',
   },
 ];
 
