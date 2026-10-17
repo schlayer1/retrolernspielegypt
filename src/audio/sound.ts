@@ -56,6 +56,10 @@ class SoundFX {
     this.tone(600, 0.03, 'square', 0.05, 0);
   }
 
+  tap(): void {
+    this.tone(220, 0.05, 'square', 0.06, 0);
+  }
+
   fanfare(): void {
     [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((f, i) => this.tone(f, 0.16, 'square', 0.1, i * 0.1));
   }
@@ -158,6 +162,33 @@ class BackgroundMusic {
       }
     }
     return this._muted;
+  }
+
+  isMutedState(): boolean {
+    return this._muted;
+  }
+
+  getVolume(): number {
+    return this._volume;
+  }
+
+  setVolume(vol: number): void {
+    this._volume = Math.max(0, Math.min(1, vol));
+    if (this.audio) {
+      this.audio.volume = this._muted ? 0 : this._volume;
+    }
+  }
+
+  getCurrentTrackInfo(ch = 1): { title: string; epoch: string } {
+    const tracks: Record<number, { title: string; epoch: string }> = {
+      1: { title: 'Dünen des Niltals', epoch: 'Frühzeit & Nilnomaden (Kapitel 1)' },
+      2: { title: 'Sonnenglut über Kemet', epoch: 'Altes Reich (Kapitel 2)' },
+      3: { title: 'Flüstern des Pharaonenpalastes', epoch: 'Erste Zwischenzeit (Kapitel 3)' },
+      4: { title: 'Gesänge im Haus des Lebens', epoch: 'Mittleres Reich (Kapitel 4)' },
+      5: { title: 'Schlag der Steinmetze von Gizeh', epoch: 'Neues Reich (Kapitel 5)' },
+      6: { title: 'Basare & Karawanen am Welthafen', epoch: 'Spätzeit & Kornkammer Roms (Kapitel 6)' },
+    };
+    return tracks[ch] || tracks[1];
   }
 }
 

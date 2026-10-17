@@ -298,10 +298,15 @@ export class BootScene extends Phaser.Scene {
     this.load.image('egypt_debris', 'assets/egypt/Debris.png');
     this.load.image('egypt_palm_alt', 'assets/egypt/PalmTree2.png');
 
-    // 4. Didaktische 16-Bit-Item-Icons
+    // 4. Didaktische 16-Bit-Item-Icons & Antike Relikte
     for (const id of Object.keys(ITEMS)) {
       this.load.image(`icon-${id}`, `assets/icons/${id}.png`);
     }
+    this.load.image('relic_skanabaeus', 'assets/icons/skanabaeus.png');
+    this.load.image('relic_kanope', 'assets/icons/kanope.png');
+    this.load.image('relic_papyrusrolle', 'assets/icons/papyrusrolle.png');
+    this.load.image('relic_goldmaske', 'assets/icons/goldmaske.png');
+    this.load.image('relic_pinsel_tinte', 'assets/icons/pinsel_tinte.png');
   }
 
   create(): void {

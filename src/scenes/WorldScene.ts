@@ -43,7 +43,12 @@ type Kind =
   | 'egypt_roman_envoy'
   | 'egypt_cedar_trader'
   | 'egypt_sarcophagus'
-  | 'egypt_bazaar_stall';
+  | 'egypt_bazaar_stall'
+  | 'egypt_relic_skanabaeus'
+  | 'egypt_relic_kanope'
+  | 'egypt_relic_papyrusrolle'
+  | 'egypt_relic_goldmaske'
+  | 'egypt_relic_pinsel_tinte';
 
 interface DomLabel {
   x: number;
@@ -142,7 +147,10 @@ export class WorldScene extends Phaser.Scene {
     // 4. Gebäude- & Mentorenplätze
     this.placeEgyptBuildingsAndNPCs();
 
-    // 5. Spieler-Spawn
+    // 5. Antike Relikte & Sakrale Schätze
+    this.placeEgyptRelics();
+
+    // 6. Spieler-Spawn
     const startX = state.playerX || 490;
     const startY = state.playerY || 350;
     const texKey = state.playerGender === 'female' ? 'player_egypt_female' : 'player_egypt_male';
@@ -171,11 +179,13 @@ export class WorldScene extends Phaser.Scene {
     state.on('craft', this.onCraft, this);
     state.on('chapterChanged', this.onChapterChanged, this);
     state.on('profileChanged', this.onProfileChanged, this);
+    state.on('relicFound', this.onRelicFound, this);
 
     this.events.once('shutdown', () => {
       state.off('craft', this.onCraft, this);
       state.off('chapterChanged', this.onChapterChanged, this);
       state.off('profileChanged', this.onProfileChanged, this);
+      state.off('relicFound', this.onRelicFound, this);
     });
     window.addEventListener('beforeunload', () => this.persist());
   }
@@ -194,6 +204,23 @@ export class WorldScene extends Phaser.Scene {
 
   private onChapterChanged(): void {
     this.scene.restart();
+  }
+
+  private onRelicFound(relicId: string): void {
+    const kindMap: Record<string, Kind> = {
+      skanabaeus: 'egypt_relic_skanabaeus',
+      kanope: 'egypt_relic_kanope',
+      papyrusrolle: 'egypt_relic_papyrusrolle',
+      goldmaske: 'egypt_relic_goldmaske',
+      pinsel_tinte: 'egypt_relic_pinsel_tinte',
+    };
+    const targetKind = kindMap[relicId];
+    if (!targetKind) return;
+    const n = this.nodes.find((item) => item.kind === targetKind);
+    if (n) {
+      n.sprite.setVisible(false);
+      if (n.label) n.label.el.style.display = 'none';
+    }
   }
 
   // ---------------------------------------------------------------- Weltaufbau & Themenböden
@@ -850,6 +877,50 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  private placeEgyptRelics(): void {
+    const ch = state.chapter;
+
+    // 1. Skarabäus-Amulett (ab Kapitel 1 am Schilfufer)
+    if (ch >= 1 && !state.relicsFound.includes('skanabaeus')) {
+      const n = this.addNode('egypt_relic_skanabaeus', 'relic_skanabaeus', undefined, 574, 396);
+      n.sprite.setScale(0.7);
+      n.sprite.setDepth(396);
+      n.label = this.addLabel(574, 372, '🪲 Skarabäus-Amulett (E)', '#fde047');
+    }
+
+    // 2. Kanopenkrug (ab Kapitel 4 nahe der Balsamierungshalle)
+    if (ch >= 4 && !state.relicsFound.includes('kanope')) {
+      const n = this.addNode('egypt_relic_kanope', 'relic_kanope', undefined, 195, 325);
+      n.sprite.setScale(0.7);
+      n.sprite.setDepth(325);
+      n.label = this.addLabel(195, 301, '🏺 Kanopenkrug (E)', '#fde047');
+    }
+
+    // 3. Papyrus-Totenbuchrolle (ab Kapitel 4 beim Haus des Lebens)
+    if (ch >= 4 && !state.relicsFound.includes('papyrusrolle')) {
+      const n = this.addNode('egypt_relic_papyrusrolle', 'relic_papyrusrolle', undefined, 265, 360);
+      n.sprite.setScale(0.7);
+      n.sprite.setDepth(360);
+      n.label = this.addLabel(265, 336, '📜 Papyrus-Totenbuch (E)', '#fde047');
+    }
+
+    // 4. Goldene Totenmaske (ab Kapitel 5 auf dem Gizeh-Plateau)
+    if (ch >= 5 && !state.relicsFound.includes('goldmaske')) {
+      const n = this.addNode('egypt_relic_goldmaske', 'relic_goldmaske', undefined, 80, 95);
+      n.sprite.setScale(0.7);
+      n.sprite.setDepth(95);
+      n.label = this.addLabel(80, 71, '👑 Goldene Totenmaske (E)', '#fde047');
+    }
+
+    // 5. Königliche Schreiberpalette (ab Kapitel 6 am Nilhafen-Basar)
+    if (ch >= 6 && !state.relicsFound.includes('pinsel_tinte')) {
+      const n = this.addNode('egypt_relic_pinsel_tinte', 'relic_pinsel_tinte', undefined, 445, 450);
+      n.sprite.setScale(0.7);
+      n.sprite.setDepth(450);
+      n.label = this.addLabel(445, 426, '🖌️ Schreiberpalette (E)', '#fde047');
+    }
+  }
+
   /**
    * Ersetzt das Bauschild durch echte 16-Bit-Pixel-Art-Bauwerke aus Ancient Egyptian City
    * und aktualisiert das bestehende Schild ohne Dopplung!
@@ -965,7 +1036,11 @@ export class WorldScene extends Phaser.Scene {
     if (this.sleeping) return;
 
     if (!state.modal) {
+      const prevDay = state.dayTime;
       state.dayTime = (state.dayTime + delta / DAY_MS) % 1;
+      if (state.dayTime < prevDay) {
+        state.daysSurvived += 1;
+      }
       const angle = state.dayTime * Math.PI * 2;
       const darkness = Math.max(0, -Math.sin(angle));
       this.nightOverlay.setAlpha(darkness * 0.68);
@@ -1251,13 +1326,44 @@ export class WorldScene extends Phaser.Scene {
         }
         return `Drücke E: ${b?.name ?? 'Bauwerk'} errichten`;
       }
+      case 'egypt_relic_skanabaeus':
+        return 'Drücke E: Heiliges Skarabäus-Amulett des Khepri bergen!';
+      case 'egypt_relic_kanope':
+        return 'Drücke E: Alabaster-Kanopenkrug des Duamutef untersuchen!';
+      case 'egypt_relic_papyrusrolle':
+        return 'Drücke E: Papyrus-Totenbuchrolle des Ani entrollen!';
+      case 'egypt_relic_goldmaske':
+        return 'Drücke E: Goldene Totenmaske des Pharaos bergen!';
+      case 'egypt_relic_pinsel_tinte':
+        return 'Drücke E: Königliche Schreiberpalette erforschen!';
       default:
         return 'Drücke E zum Interagieren';
     }
   }
 
+  private collectRelic(id: string, n: Node): void {
+    n.sprite.setVisible(false);
+    if (n.label) n.label.el.style.display = 'none';
+    state.emit('openRelicQuiz', id);
+  }
+
   private interact(n: Node): void {
     switch (n.kind) {
+      case 'egypt_relic_skanabaeus':
+        this.collectRelic('skanabaeus', n);
+        break;
+      case 'egypt_relic_kanope':
+        this.collectRelic('kanope', n);
+        break;
+      case 'egypt_relic_papyrusrolle':
+        this.collectRelic('papyrusrolle', n);
+        break;
+      case 'egypt_relic_goldmaske':
+        this.collectRelic('goldmaske', n);
+        break;
+      case 'egypt_relic_pinsel_tinte':
+        this.collectRelic('pinsel_tinte', n);
+        break;
       case 'egypt_senbi':
         this.interactSenbi();
         break;

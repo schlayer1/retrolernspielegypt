@@ -31,6 +31,8 @@ export interface SaveData {
   playTimeSec: number;
   distanceMeters: number;
   daysSurvived: number;
+  relicsFound?: string[];
+  relicQuizAnswered?: string[];
 }
 
 const STORAGE_KEY = 'retro_save_aegypten';

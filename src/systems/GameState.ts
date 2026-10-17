@@ -104,6 +104,8 @@ class GameState extends Phaser.Events.EventEmitter {
   playTimeSec = 0;
   distanceMeters = 0;
   daysSurvived = 1;
+  relicsFound: string[] = [];
+  relicQuizAnswered: string[] = [];
 
   playerX = 440;
   playerY = 320;
@@ -479,7 +481,7 @@ class GameState extends Phaser.Events.EventEmitter {
   formatPlayTime(): string {
     const m = Math.floor(this.playTimeSec / 60);
     const s = Math.floor(this.playTimeSec % 60);
-    return `${m}m ${s < 10 ? '0' : ''}${s}s`;
+    return `${m} Min. ${s} Sek.`;
   }
 
   epochRankTitle(): string {
@@ -510,6 +512,8 @@ class GameState extends Phaser.Events.EventEmitter {
     this.playTimeSec = 0;
     this.distanceMeters = 0;
     this.daysSurvived = 1;
+    this.relicsFound = [];
+    this.relicQuizAnswered = [];
     this.persist();
   }
 
@@ -522,14 +526,14 @@ class GameState extends Phaser.Events.EventEmitter {
     const gCode = this.playerGender === 'male' ? 'M' : 'W';
     const rCode = this.playerRole === 'fisher' ? 'F' : this.playerRole === 'scribe' ? 'S' : 'B';
     const mins = Math.max(1, Math.round(this.playTimeSec / 60));
-    return `EGY-${pName}-${gCode}-${rCode}-K${this.chapter}-Q${this.quest}-${mins}M`;
+    return `EGY-${pName}-${gCode}-${rCode}-K${this.chapter}-Q${this.quest}-R${this.relicsFound.length}-${mins}M`;
   }
 
   importCode(raw: string): { ok: boolean; msg: string } {
     const clean = raw.trim().toUpperCase();
     const parts = clean.split('-');
     if (parts.length < 6 || parts[0] !== 'EGY') {
-      return { ok: false, msg: 'Ungültiges Code-Format. Erwartet: EGY-NAME-G-R-K[X]-Q[Y]-[ZEIT]M' };
+      return { ok: false, msg: 'Ungültiges Code-Format. Erwartet: EGY-NAME-G-R-K[X]-Q[Y]-R[Z]-[ZEIT]M' };
     }
     const name = parts[1];
     const gender = parts[2] === 'M' ? 'male' : 'female';
@@ -539,8 +543,10 @@ class GameState extends Phaser.Events.EventEmitter {
     else if (parts[3] === 'S') { role = 'scribe'; chIdx = 4; }
     else if (parts[3] === 'B') { role = 'builder'; chIdx = 4; }
 
-    const ch = parseInt(parts[chIdx].replace('K', ''), 10);
-    const q = parseInt(parts[chIdx + 1]?.replace('Q', '') || '1', 10);
+    const chPart = parts.find((p) => p.startsWith('K')) || 'K1';
+    const qPart = parts.find((p) => p.startsWith('Q')) || 'Q1';
+    const ch = parseInt(chPart.replace('K', ''), 10);
+    const q = parseInt(qPart.replace('Q', ''), 10);
     if (isNaN(ch) || ch < 1 || ch > 6) return { ok: false, msg: 'Ungültiges Kapitel im Code!' };
 
     this.playerName = name.charAt(0) + name.slice(1).toLowerCase();
@@ -574,6 +580,8 @@ class GameState extends Phaser.Events.EventEmitter {
     this.playTimeSec = data.playTimeSec || 0;
     this.distanceMeters = data.distanceMeters || 0;
     this.daysSurvived = data.daysSurvived || 1;
+    this.relicsFound = data.relicsFound || [];
+    this.relicQuizAnswered = data.relicQuizAnswered || [];
   }
 
   toSaveData(): SaveData {
@@ -601,6 +609,8 @@ class GameState extends Phaser.Events.EventEmitter {
       playTimeSec: this.playTimeSec,
       distanceMeters: this.distanceMeters,
       daysSurvived: this.daysSurvived,
+      relicsFound: this.relicsFound,
+      relicQuizAnswered: this.relicQuizAnswered,
     };
   }
 

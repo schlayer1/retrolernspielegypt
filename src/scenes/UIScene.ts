@@ -21,6 +21,7 @@ import {
 import { DialogSpec, EGYPT_ROLES, PlayerRole, state } from '../systems/GameState';
 import { PlayerGender } from '../systems/SaveManager';
 import { TouchControls } from '../ui/TouchControls';
+import { EGYPT_RELICS, RelicDef } from '../data/relics';
 
 function escapeHtml(s: string): string {
   return s
@@ -47,6 +48,7 @@ type ActivePanel =
   | 'none'
   | 'start'
   | 'pause'
+  | 'relic'
   | 'bag'
   | 'craft'
   | 'trade'
@@ -82,6 +84,7 @@ export class UIScene extends Phaser.Scene {
   private modalFooterEl!: HTMLElement;
 
   private activePanel: ActivePanel = 'none';
+  private currentRelic: RelicDef | null = null;
   private lexSelected = 'kemet';
   private bagTab: 'all' | 'tool' | 'food' | 'material' | 'culture' = 'all';
   private bagSelected: EgyptItemId = 'papyrus_staengel';
@@ -283,6 +286,7 @@ export class UIScene extends Phaser.Scene {
     state.on('toast', (msg: string) => this.toast(msg));
     state.on('openTrade', () => this.openTrade());
     state.on('openCertificate', () => this.openCertificate());
+    state.on('openRelicQuiz', (r: RelicDef | string) => this.openRelicModal(r), this);
   }
 
   private bindKeys(): void {
@@ -495,6 +499,9 @@ export class UIScene extends Phaser.Scene {
       case 'pause':
         this.openPause();
         break;
+      case 'relic':
+        if (this.currentRelic) this.renderRelicModal(this.currentRelic);
+        break;
       case 'bag':
         this.openBag();
         break;
@@ -520,7 +527,7 @@ export class UIScene extends Phaser.Scene {
     this.activePanel = panel;
     state.modal = true;
     this.modalTitleEl.textContent = title;
-    this.modalCardEl.classList.toggle('dark', panel === 'pause');
+    this.modalCardEl.classList.remove('dark');
     const closeBtn = this.root.querySelector('#modal-close-btn') as HTMLElement | null;
     if (closeBtn) closeBtn.style.display = panel === 'start' ? 'none' : 'inline-flex';
     this.backdropEl.style.display = 'flex';
@@ -812,61 +819,347 @@ export class UIScene extends Phaser.Scene {
   }
 
   private openPause(): void {
-    this.openModal('pause', 'Pausiert – Altes Ägypten');
-    const timeStr = state.formatPlayTime();
-    const rank = state.epochRankTitle();
-    const code = state.exportCode();
+    state.persist();
+    this.openModal('pause', '⏸️ Spiel pausiert – Abenteuer-Statistik & Sicherung (P)');
+
+    const avatar = state.playerGender === 'female' ? state.femalePreviewUrl : state.malePreviewUrl;
+    const meta = CHAPTERS[state.chapter] ?? CHAPTERS[1];
+    const qText = meta.quests[Math.min(state.quest, meta.quests.length - 1)];
+    const t = state.dayTime;
+    const dayPhase = t < 0.55 ? '☀️ Tag' : t < 0.7 ? '🌅 Dämmerung' : t < 0.9 ? '🌙 Nacht' : '🌄 Morgengrauen';
+    const shortCode = state.exportCode();
+
+    const builtList =
+      state.buildings.length > 0
+        ? state.buildings.map((id) => BUILDINGS.find((b) => b.id === id)?.name ?? id).join(', ')
+        : 'Noch keine Bauwerke errichtet';
 
     this.modalBodyEl.innerHTML = `
-      <div class="pause-stats" style="margin-bottom:14px;">
-        <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Forscher:</span> <strong>${escapeHtml(state.playerName)} (${state.playerGender === 'female' ? 'Weiblich' : 'Männlich'}) · ${escapeHtml(state.roleSpecialistTitle())}</strong></div>
-        <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Titel / Rang:</span> <strong style="color:#fde047;">${escapeHtml(rank)}</strong></div>
-        <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Aktuelles Zeitalter:</span> <strong>Kapitel ${state.chapter}</strong></div>
-        <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(232,193,112,0.2);"><span>Spielzeit:</span> <strong>${timeStr}</strong></div>
-        <div class="pause-stat-row" style="display:flex;justify-content:space-between;padding:4px 0;"><span>Wissen:</span> <strong>${state.knowledge}% (${state.lexicon.length} / ${Object.keys(LEXICON).length} Einträge)</strong></div>
-      </div>
-
-      <div style="background:#2a1d10;padding:12px;border:1.5px solid #e8c170;border-radius:8px;margin-bottom:10px;">
-        <label style="font-size:12px;font-weight:bold;color:#fde047;">Dein Mnemotechnik-Speichercode (ohne Datenbank):</label>
-        <div style="display:flex;gap:6px;margin-top:6px;">
-          <input type="text" readonly value="${code}" style="flex:1;background:#1e1b18;border:1px solid #e8c170;color:#fde047;padding:5px 8px;font-family:monospace;font-size:14px;border-radius:4px;" id="pause-code-field" />
-          <button class="retro-btn" id="btn-copy-code">📋 Kopieren</button>
+      <div style="background:linear-gradient(135deg,#2b1a0c 0%,#462b14 100%);border:2px solid #e8c170;border-radius:10px;padding:12px 16px;color:#fff6e0;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="gender-avatar-box">
+            <img src="${avatar || (state.playerGender === 'female' ? 'assets/gfx/player_egypt_female.png' : 'assets/gfx/player_egypt_male.png')}" alt="${escapeHtml(state.playerName)}" />
+          </div>
+          <div>
+            <div style="display:inline-block;background:#fbbf24;color:#1a1208;font-weight:900;font-size:11px;padding:2px 8px;border-radius:99px;margin-bottom:3px;">
+              ⏸ ZEIT, HUNGER & SCHUTZ SIND ANGEHALTEN
+            </div>
+            <div style="font-size:19px;font-weight:900;color:#ffe28a;">
+              ${escapeHtml(state.playerName)} · <span style="font-size:15px;color:#fed7aa;">${escapeHtml(state.roleSpecialistTitle())}</span>
+            </div>
+            <div style="font-size:13px;color:#e8dec5;margin-top:2px;">
+              <strong>Aktuelle Aufgabe:</strong> ${escapeHtml(qText)}
+            </div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11.5px;color:#bbf7d0;font-weight:800;">✓ Automatisch auf diesem Gerät gespeichert</div>
+          <div style="font-size:12px;color:#fde68a;">Kapitel ${state.chapter}: ${escapeHtml(meta.title)}</div>
         </div>
       </div>
 
-      <div style="background:#2a1d10;padding:12px;border:1.5px solid #e8c170;border-radius:8px;">
-        <label style="font-size:12px;font-weight:bold;color:#fde047;">Code eingeben / Fortsetzen:</label>
-        <div style="display:flex;gap:6px;margin-top:6px;">
-          <input type="text" placeholder="z. B. EGY-MERIT-W-K2-Q3-10M" style="flex:1;background:#1e1b18;border:1px solid #e8c170;color:#fff;padding:5px 8px;font-size:13px;border-radius:4px;" id="input-import-code" />
-          <button class="retro-btn" id="btn-import-code">Laden ⏎</button>
+      <div class="stats-grid">
+        <div class="stat-tile">
+          <div class="stat-icon">${EGYPT_ROLES[state.playerRole]?.icon ?? '🎣'}</div>
+          <div>
+            <div class="stat-val">${escapeHtml(EGYPT_ROLES[state.playerRole]?.name ?? 'Pionier/in')}</div>
+            <div class="stat-lbl">${escapeHtml(EGYPT_ROLES[state.playerRole]?.perk ?? '')}</div>
+          </div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-icon">⏱️</div>
+          <div>
+            <div class="stat-val">${escapeHtml(state.formatPlayTime())}</div>
+            <div class="stat-lbl">Gespielte Abenteuerzeit</div>
+          </div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-icon">☀️</div>
+          <div>
+            <div class="stat-val">Tag ${state.daysSurvived} (${dayPhase})</div>
+            <div class="stat-lbl">Vergangene Tage am Nil</div>
+          </div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-icon">👣</div>
+          <div>
+            <div class="stat-val">${Math.round(state.distanceMeters)} Meter</div>
+            <div class="stat-lbl">Zu Fuß am Nil zurückgelegt</div>
+          </div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-icon">🎒</div>
+          <div>
+            <div class="stat-val">${state.totalItemsCollected()} Gegenstände</div>
+            <div class="stat-lbl">Gesammelt, geerntet & geschmiedet</div>
+          </div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-icon">🏛️</div>
+          <div>
+            <div class="stat-val">${state.buildings.length} / ${BUILDINGS.length} Bauwerke</div>
+            <div class="stat-lbl" title="${escapeHtml(builtList)}">Im Alten Ägypten errichtet</div>
+          </div>
+        </div>
+        <div class="stat-tile" style="grid-column: 1 / 2;">
+          <div class="stat-icon">📖</div>
+          <div>
+            <div class="stat-val">${state.lexicon.length} / ${Object.keys(LEXICON).length} Begriffe (${state.knowledge}%)</div>
+            <div class="stat-lbl">Entdecktes Geschichtswissen</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fffdf7;border:2px solid #c29b61;border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+          <div style="font-weight:900;font-size:14.5px;color:#5a2d0c;">
+            🏺 Antike Relikte & Archäologie (${state.relicsFound.length} / 5 entdeckt):
+          </div>
+          <div style="font-size:12px;font-weight:800;color:${state.relicsFound.length === 5 ? '#15803d' : '#b45309'};">
+            ${state.relicsFound.length === 5 ? '🏅 Vollständig (Königliches Siegel verliehen)!' : 'Suche an Gräbern, Tempeln & Basaren'}
+          </div>
+        </div>
+        <div class="relic-grid">
+          ${Object.values(EGYPT_RELICS).map((rel) => {
+            const found = state.relicsFound.includes(rel.id);
+            const answered = state.relicQuizAnswered.includes(rel.id);
+            return `
+              <div class="relic-card ${found ? 'found' : 'locked'}" data-pause-relic="${rel.id}" style="cursor:pointer;" title="${escapeHtml(rel.title)} (${escapeHtml(rel.epoch)})">
+                <span class="relic-icon-big">
+                  ${found ? `<img src="${rel.image}" alt="${escapeHtml(rel.title)}" style="width:30px;height:30px;image-rendering:pixelated;object-fit:contain;vertical-align:middle;">` : '❓'}
+                </span>
+                <span class="relic-name">${escapeHtml(found ? rel.title : 'Unentdeckt')}</span>
+                <span style="font-size:10.5px;color:${answered ? '#15803d' : '#854d0e'};font-weight:700;">
+                  ${found ? (answered ? '✓ Erforscht' : 'Quiz offen') : 'Verborgen'}
+                </span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <div style="background:#fef3c7;border:2px solid #d97706;border-radius:10px;padding:12px 16px;margin-bottom:10px;">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="flex:1;min-width:240px;">
+            <div style="font-weight:900;font-size:15px;color:#7a3b10;">
+              📒 Dein kurzer Hefter-Code zum Unterbrechen / Gerätewechsel:
+            </div>
+            <div style="font-size:13px;color:#4a3520;margin-top:2px;">
+              Auf <strong>diesem Gerät</strong> kannst du beim nächsten Mal einfach auf „Weiter spielen“ klicken. Falls du in der nächsten Stunde ein <strong>anderes iPad</strong> bekommst, notiere dir diesen kurzen Code im Heft:
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span class="shortcode-pill">${escapeHtml(shortCode)}</span>
+            <button class="retro-btn" id="pause-copy-code">📋 Code kopieren</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fffdf7;border:2px solid #c29b61;border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+          <span style="font-size:16px;">🎵</span>
+          <span style="font-weight:900;font-size:14.5px;color:#5a2d0c;">Epochen-Soundtrack:</span>
+          <span id="pause-music-track-info" style="font-weight:700;font-size:13px;color:#854d0e;">${escapeHtml(bgm.getCurrentTrackInfo(state.chapter).title)} (${escapeHtml(bgm.getCurrentTrackInfo(state.chapter).epoch)})</span>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:#78350f;background:#fef3c7;padding:2px 10px;border-radius:99px;border:1px solid #fde68a;display:inline-block;margin-bottom:8px;">
+          ${escapeHtml(bgm.getCurrentTrackInfo(state.chapter).epoch)}
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fcf8ed;border:1.5px solid #ebd8ab;border-radius:8px;padding:8px 12px;">
+          <button class="retro-btn" id="pause-music-toggle-btn" style="min-width:115px;background:${bgm.isMutedState() ? '#78350f' : '#3b5e2b'};color:#fff;">
+            ${bgm.isMutedState() ? '🔇 Musik: Aus' : '🔊 Musik: An'}
+          </button>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:180px;">
+            <span style="font-size:13px;font-weight:800;color:#5a2d0c;">Lautstärke:</span>
+            <input
+              id="pause-volume-slider"
+              type="range"
+              min="0"
+              max="100"
+              value="${Math.round(bgm.getVolume() * 100)}"
+              style="flex:1;cursor:pointer;accent-color:#b45309;"
+            />
+            <span id="pause-volume-label" style="font-size:12.5px;font-weight:900;color:#5a2d0c;min-width:38px;text-align:right;">
+              ${Math.round(bgm.getVolume() * 100)}%
+            </span>
+          </div>
         </div>
       </div>
     `;
 
     this.modalFooterEl.innerHTML = `
-      <button class="retro-btn btn-primary" id="btn-resume">Weiterspielen ▶</button>
+      <button class="retro-btn" id="pause-startscreen-btn">🏠 Zum Startbildschirm</button>
+      <button class="retro-btn" id="pause-chapter-btn">🗺️ Epoche wechseln</button>
+      <button class="retro-btn btn-primary" id="pause-resume-btn" style="background:#22c55e;color:#052e16;font-size:15px;padding:8px 18px;font-weight:900;">
+        ▶️ Weiter spielen (P)
+      </button>
     `;
 
-    this.modalBodyEl.querySelector('#btn-copy-code')!.addEventListener('click', () => {
-      const f = this.modalBodyEl.querySelector('#pause-code-field') as HTMLInputElement;
-      f.select();
-      navigator.clipboard.writeText(f.value);
-      this.toast('Kopiert! Zeige diesen Code deiner Lehrkraft.');
+    this.modalBodyEl.querySelector('#pause-copy-code')?.addEventListener('click', () => {
+      navigator.clipboard?.writeText(shortCode);
+      this.toast(`Hefter-Code kopiert: ${shortCode}`);
     });
 
-    this.modalBodyEl.querySelector('#btn-import-code')!.addEventListener('click', () => {
-      const inp = this.modalBodyEl.querySelector('#input-import-code') as HTMLInputElement;
-      const res = state.importCode(inp.value);
-      if (res.ok) {
-        this.toast(res.msg);
-        this.closeModal();
-      } else {
-        alert(res.msg);
-      }
+    const volSlider = this.modalBodyEl.querySelector<HTMLInputElement>('#pause-volume-slider');
+    const volLabel = this.modalBodyEl.querySelector<HTMLElement>('#pause-volume-label');
+    const musicToggleBtn = this.modalBodyEl.querySelector<HTMLElement>('#pause-music-toggle-btn');
+
+    if (volSlider && volLabel) {
+      volSlider.addEventListener('input', () => {
+        const val = Number(volSlider.value);
+        volLabel.textContent = `${val}%`;
+        bgm.setVolume(val / 100);
+        if (bgm.isMutedState() && val > 0) {
+          bgm.toggleMute();
+          if (musicToggleBtn) {
+            musicToggleBtn.textContent = '🔊 Musik: An';
+            musicToggleBtn.style.background = '#3b5e2b';
+          }
+        }
+      });
+    }
+
+    if (musicToggleBtn) {
+      musicToggleBtn.addEventListener('click', () => {
+        const isMuted = bgm.toggleMute();
+        musicToggleBtn.textContent = isMuted ? '🔇 Musik: Aus' : '🔊 Musik: An';
+        musicToggleBtn.style.background = isMuted ? '#78350f' : '#3b5e2b';
+        if (volSlider && volLabel) {
+          volSlider.value = String(Math.round(bgm.getVolume() * 100));
+          volLabel.textContent = `${Math.round(bgm.getVolume() * 100)}%`;
+        }
+        this.toast(isMuted ? '🔇 Musik stummgeschaltet' : '🎵 Musik an');
+      });
+    }
+
+    this.modalBodyEl.querySelectorAll('[data-pause-relic]').forEach((el) => {
+      el.addEventListener('click', () => {
+        const relId = (el as HTMLElement).dataset.pauseRelic;
+        if (relId && state.relicsFound.includes(relId)) {
+          this.openRelicModal(relId);
+        } else {
+          this.toast('🏺 Dieses antike Relikt ist noch verborgen. Suche an Tempeln, Gräbern oder im Schilf!');
+        }
+      });
     });
 
-    this.modalFooterEl.querySelector('#btn-resume')!.addEventListener('click', () => {
+    this.modalFooterEl.querySelector('#pause-startscreen-btn')?.addEventListener('click', () => {
+      state.hasHadExistingSaveOnBoot = true;
+      this.openStartScreen();
+    });
+
+    this.modalFooterEl.querySelector('#pause-chapter-btn')?.addEventListener('click', () => {
+      this.openTimeline();
+    });
+
+    this.modalFooterEl.querySelector('#pause-resume-btn')?.addEventListener('click', () => {
       this.closeModal();
+    });
+  }
+
+  public openRelicModal(relicOrId: RelicDef | string): void {
+    const relic = typeof relicOrId === 'string' ? EGYPT_RELICS[relicOrId] : relicOrId;
+    if (!relic) return;
+    this.currentRelic = relic;
+    if (!state.relicsFound.includes(relic.id)) {
+      state.relicsFound.push(relic.id);
+      state.persist();
+      state.emit('relicFound', relic.id);
+    }
+    this.openModal('relic', `🏺 Antikes Relikt: ${relic.title}`);
+    this.renderRelicModal(relic);
+  }
+
+  private renderRelicModal(relic: RelicDef): void {
+    const alreadyAnswered = state.relicQuizAnswered.includes(relic.id);
+    const optsHtml = relic.options
+      .map((opt, i) => {
+        return `
+          <button class="retro-btn relic-opt-btn" data-relic-opt="${i}" style="text-align:left;padding:10px 14px;font-size:14px;line-height:1.4;margin-bottom:6px;width:100%;background:${alreadyAnswered && i === relic.correct ? '#15803d' : '#2a1d10'};color:#fff;">
+            ${escapeHtml(opt)}
+          </button>
+        `;
+      })
+      .join('');
+
+    this.modalBodyEl.innerHTML = `
+      <div style="background:linear-gradient(135deg,#2b1a0c 0%,#462b14 100%);border:2px solid #e8c170;border-radius:10px;padding:12px 16px;color:#fff6e0;display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+        <div class="gender-avatar-box" style="border-color:#e8c170;background:#3d2410;">
+          <img src="${relic.image}" alt="${escapeHtml(relic.title)}" style="width:36px;height:36px;image-rendering:pixelated;object-fit:contain;" />
+        </div>
+        <div>
+          <div style="font-size:11.5px;font-weight:800;color:#fde047;text-transform:uppercase;">
+            Archäologischer Fund · ${escapeHtml(relic.epoch)}
+          </div>
+          <div style="font-size:18px;font-weight:900;color:#ffe28a;">
+            ${escapeHtml(relic.title)}
+          </div>
+          <div style="font-size:12.5px;color:#e8dec5;margin-top:2px;">
+            📍 Fundort: ${escapeHtml(relic.locationHint)}
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fffdf7;border:2px solid #c29b61;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.55;color:#3b2310;">
+        <strong style="color:#78350f;">Historischer Befund:</strong> ${escapeHtml(relic.lore)}
+      </div>
+
+      <div style="background:#fef3c7;border:2px solid #d97706;border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+        <div style="font-weight:900;font-size:14.5px;color:#78350f;margin-bottom:8px;">
+          ❓ Archäologie-Rätsel: ${escapeHtml(relic.question)}
+        </div>
+        <div id="relic-options-container">${optsHtml}</div>
+        <div id="relic-feedback" style="display:${alreadyAnswered ? 'block' : 'none'};margin-top:10px;font-size:13.5px;font-weight:800;color:#166534;background:#dcfce7;border:1.5px solid #86efac;padding:8px 12px;border-radius:7px;">
+          ✓ ${escapeHtml(relic.explanation)}
+        </div>
+      </div>
+    `;
+
+    this.modalFooterEl.innerHTML = `
+      <div style="font-size:12.5px;color:#78350f;font-weight:800;flex:1;">
+        🏺 Bisher erforscht: ${state.relicsFound.length}/5 Relikten · Archäologen-Quiz gelöst: ${state.relicQuizAnswered.length}/5
+      </div>
+      <button class="retro-btn btn-primary" id="relic-done-btn" style="background:#22c55e;color:#052e16;font-size:14px;padding:8px 18px;font-weight:900;">
+        ✓ Verstanden & Schließen
+      </button>
+    `;
+
+    const feedbackEl = this.modalBodyEl.querySelector('#relic-feedback') as HTMLElement;
+    this.modalBodyEl.querySelectorAll('[data-relic-opt]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const optIdx = Number((btn as HTMLElement).dataset.relicOpt);
+        if (optIdx === relic.correct) {
+          sfx.craft();
+          (btn as HTMLElement).style.background = '#15803d';
+          (btn as HTMLElement).style.borderColor = '#86efac';
+          if (!state.relicQuizAnswered.includes(relic.id)) {
+            state.relicQuizAnswered.push(relic.id);
+            state.persist();
+          }
+          if (feedbackEl) {
+            feedbackEl.style.display = 'block';
+            feedbackEl.style.color = '#166534';
+            feedbackEl.style.background = '#dcfce7';
+            feedbackEl.style.borderColor = '#86efac';
+            feedbackEl.textContent = `✓ Richtig! ${relic.explanation}`;
+          }
+          this.toast(`Ausgezeichnet! Relikt-Rätsel gelöst.`);
+        } else {
+          sfx.tap();
+          (btn as HTMLElement).style.background = '#991b1b';
+          if (feedbackEl) {
+            feedbackEl.style.display = 'block';
+            feedbackEl.style.color = '#991b1b';
+            feedbackEl.style.background = '#fee2e2';
+            feedbackEl.style.borderColor = '#fca5a5';
+            feedbackEl.textContent = `Nicht ganz richtig. Lies noch einmal genau im historischen Befund nach!`;
+          }
+        }
+      });
+    });
+
+    this.modalFooterEl.querySelector('#relic-done-btn')!.addEventListener('click', () => {
+      this.closeModal();
+      this.toast(`Relikt „${relic.title}“ erfolgreich in deiner Sammlung erfasst!`);
     });
   }
 
