@@ -133,29 +133,35 @@ export class UIScene extends Phaser.Scene {
   private mountDOM(): void {
     this.root.innerHTML = `
       <div class="hud-top">
-        <div class="hud-quest-box">
+        <div class="hud-quest-box" id="hud-quest-box" title="Tippen für Details">
           <div class="hud-chapter-title" id="hud-title">Kapitel 1: Die Wüste weicht – Ankunft am Nil</div>
           <div class="hud-quest-text" id="hud-quest">Ziel wird geladen ...</div>
           <div class="hud-compass" id="hud-compass">🧭 Berechne Weg ...</div>
         </div>
         <div class="hud-right">
-          <div class="hud-bars-card">
-            <div class="hud-bar-row">
-              <span>🍖 Nahrung</span>
-              <div class="hud-bar-track"><div class="hud-bar-fill" id="bar-food" style="background:#e0894a;width:85%"></div></div>
+          <div class="hud-top-right-group">
+            <div class="hud-bars-card" id="hud-bars-card">
+              <div class="hud-bar-row" id="row-food" style="cursor:pointer;" title="Tippen zum Essen (F)">
+                <span>🍖 Nahrung</span>
+                <div class="hud-bar-track"><div class="hud-bar-fill" id="bar-food" style="background:#e0894a;width:85%"></div></div>
+              </div>
+              <div class="hud-bar-row">
+                <span>☀️ Lebenskraft</span>
+                <div class="hud-bar-track"><div class="hud-bar-fill" id="bar-safety" style="background:#5aa6e8;width:85%"></div></div>
+              </div>
+              <div class="hud-bar-row">
+                <span>📜 Wissen</span>
+                <div class="hud-bar-track"><div class="hud-bar-fill" id="bar-know" style="background:#e8d25a;width:0%"></div></div>
+              </div>
+              <div class="hud-bar-subinfo" style="display:flex;justify-content:space-between;font-size:11px;color:#ffe9b0;margin-top:2px;">
+                <span id="hud-lex-count">Lexikon: 0/27</span>
+                <span id="hud-clock">☀️ 08:00</span>
+              </div>
             </div>
-            <div class="hud-bar-row">
-              <span>☀️ Lebenskraft</span>
-              <div class="hud-bar-track"><div class="hud-bar-fill" id="bar-safety" style="background:#5aa6e8;width:85%"></div></div>
-            </div>
-            <div class="hud-bar-row">
-              <span>📜 Wissen</span>
-              <div class="hud-bar-track"><div class="hud-bar-fill" id="bar-know" style="background:#e8d25a;width:0%"></div></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:#ffe9b0;margin-top:2px;">
-              <span id="hud-lex-count">Lexikon: 0/27</span>
-              <span id="hud-clock">☀️ 08:00</span>
-            </div>
+            <button class="retro-btn hud-mobile-menu-btn" id="hud-mobile-menu-btn" data-act="pause" title="Menü & Pause öffnen">
+              <span style="font-size:15px;">⏸</span>
+              <span>Menü</span>
+            </button>
           </div>
           <div class="hud-btn-row">
             <button class="retro-btn" id="btn-toggle-bgm" title="Hintergrundmusik an/aus (M)" style="border-color:#38bdf8;"><span>🎵 Musik</span></button>
@@ -256,6 +262,24 @@ export class UIScene extends Phaser.Scene {
         this.toast(muted ? 'Musik stummgeschaltet' : 'Musik an');
       });
     }
+
+    const questBox = this.root.querySelector('#hud-quest-box');
+    if (questBox) {
+      questBox.addEventListener('click', () => {
+        questBox.classList.toggle('expanded');
+      });
+    }
+
+    const foodRow = this.root.querySelector('#row-food');
+    if (foodRow) {
+      foodRow.addEventListener('click', () => {
+        if (!state.modal) this.toast(state.eat());
+      });
+    }
+
+    document.getElementById('btn-dismiss-rotate')?.addEventListener('click', () => {
+      document.getElementById('rotate-prompt')?.classList.add('dismissed');
+    });
 
     // Start background music loop
     bgm.playChapter(state.chapter);

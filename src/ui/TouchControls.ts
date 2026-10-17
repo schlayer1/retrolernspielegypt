@@ -18,21 +18,37 @@ export class TouchControls {
 
     this.base = scene.add.circle(0, 0, this.radius, 0xffffff, 0.15).setStrokeStyle(1, 0xffffff, 0.5);
     this.knob = scene.add.circle(0, 0, 11, 0xffffff, 0.45);
-    this.button = scene.add.circle(w - 40, h - 40, 22, 0xe8c170, 0.45).setStrokeStyle(1, 0xffffff, 0.7);
-    this.label = scene.add.text(w - 40, h - 40, 'E', { fontFamily: 'monospace', fontSize: '16px', color: '#fff' }).setOrigin(0.5);
+    this.button = scene.add.circle(w - 38, h - 38, 24, 0xe8c170, 0.5).setStrokeStyle(2, 0xffffff, 0.85);
+    this.label = scene.add.text(w - 38, h - 38, 'E', { fontFamily: 'monospace', fontSize: '17px', color: '#fff', stroke: '#1a1208', strokeThickness: 2 }).setOrigin(0.5);
     [this.base, this.knob, this.button, this.label].forEach((o) => o.setScrollFactor(0).setDepth(1000));
     this.base.setVisible(false);
     this.knob.setVisible(false);
 
+    scene.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
+      const sw = gameSize.width;
+      const sh = gameSize.height;
+      this.button.setPosition(sw - 38, sh - 38);
+      this.label.setPosition(sw - 38, sh - 38);
+    });
+
     scene.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       if (this.isModal && this.isModal()) return;
-      if (Phaser.Math.Distance.Between(p.x, p.y, this.button.x, this.button.y) < 30) {
+      // Berührungen auf DOM-HUD-Elementen nicht als Spiel-Touch interpretieren
+      const target = p.event?.target as HTMLElement | null;
+      if (target?.closest?.('.hud-top, .hud-bottom, .modal-backdrop, .dialog-dock, #rotate-prompt')) {
+        return;
+      }
+
+      if (Phaser.Math.Distance.Between(p.x, p.y, this.button.x, this.button.y) < 36) {
         this.actionPressed = true;
         return;
       }
       // Menü-Schaltflächen oben rechts nicht als Joystick werten
-      if (p.y < 60 && p.x > w - 120) return;
-      if (p.x < w * 0.55 && this.stickPointerId === null) {
+      if (p.y < 65 && p.x > w - 130) return;
+      // Hotbar im unteren mittleren Bereich nicht als Joystick werten
+      if (p.y > h - 55 && p.x > w * 0.35 && p.x < w * 0.65) return;
+
+      if (p.x < w * 0.44 && this.stickPointerId === null) {
         this.stickPointerId = p.id;
         this.origin.set(p.x, p.y);
         this.base.setPosition(p.x, p.y).setVisible(true);

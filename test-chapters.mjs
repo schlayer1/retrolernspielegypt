@@ -32,8 +32,8 @@ async function run() {
     }
   });
 
-  console.log('--- Navigating to http://localhost:5174 ---');
-  await page.goto('http://localhost:5174', { waitUntil: 'networkidle2' });
+  console.log('--- Navigating to http://localhost:5173 ---');
+  await page.goto('http://localhost:5173', { waitUntil: 'networkidle2' });
 
   await page.waitForFunction(() => window.state && window.game);
   console.log('Phaser and GameState initialized.');
