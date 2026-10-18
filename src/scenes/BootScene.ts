@@ -324,6 +324,8 @@ export class BootScene extends Phaser.Scene {
     this.load.image('relic_papyrusrolle', 'assets/icons/papyrusrolle.png');
     this.load.image('relic_goldmaske', 'assets/icons/goldmaske.png');
     this.load.image('relic_pinsel_tinte', 'assets/icons/pinsel_tinte.png');
+    this.load.image('relic_marker_glow', 'assets/icons/relic_marker_glow.png');
+    this.load.image('icon_relic_marker_glow', 'assets/icons/relic_marker_glow.png');
   }
 
   create(): void {

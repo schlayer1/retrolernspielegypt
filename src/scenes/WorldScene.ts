@@ -79,6 +79,51 @@ interface LightGlow {
   phase: number;
 }
 
+interface BoundingBox {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+/**
+ * Sperrliste für wandernde Weidetiere gemäß snes-history-game Skill (§ 1.1).
+ * Verhindert, dass Tiere in Gebäude, Kanäle, das Lagerfeuer oder ins Wasser laufen.
+ */
+const BUILDING_OBSTACLES: BoundingBox[] = [
+  // Fischerhütte Senbi & Fischtrockengestell
+  { minX: 456, maxX: 546, minY: 260, maxY: 320 },
+  // Lagerfeuer (Fisch braten) - Schutzkreis gegen Tierbrand
+  { minX: 420, maxX: 470, minY: 320, maxY: 370 },
+  // Bewässerungskanäle
+  { minX: 412, maxX: 564, minY: 200, maxY: 218 },
+  { minX: 510, maxX: 526, minY: 204, maxY: 278 },
+  // Bauten: Lehmziegelei, Speicher, Palast, Schreiberhaus, Balsamierung, Steinmetzhütte
+  { minX: 295, maxX: 335, minY: 215, maxY: 255 },
+  { minX: 380, maxX: 430, minY: 115, maxY: 160 },
+  { minX: 330, maxX: 390, minY: 105, maxY: 155 },
+  { minX: 280, maxX: 320, minY: 330, maxY: 370 },
+  { minX: 170, maxX: 210, minY: 370, maxY: 410 },
+  { minX: 130, maxX: 170, minY: 130, maxY: 170 },
+  // Nilufer-Kante für Landtiere (Wasser-Sperre)
+  { minX: 605, maxX: 800, minY: 0, maxY: 800 },
+];
+
+/** Begrenzung für schwimmende Nil-Enten (Land-Sperre) */
+const NILE_WATER_BOUNDS: BoundingBox = { minX: 625, maxX: 750, minY: 310, maxY: 420 };
+
+interface WanderingAnimal {
+  sprite: Phaser.GameObjects.Sprite;
+  homeX: number;
+  homeY: number;
+  vx: number;
+  vy: number;
+  timer: number;
+  walkAnim: string;
+  idleAnim: string;
+  isWaterAnimal?: boolean;
+}
+
 export class WorldScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private facing: 'down' | 'up' | 'left' | 'right' = 'down';
@@ -98,16 +143,7 @@ export class WorldScene extends Phaser.Scene {
   private nightOverlay!: Phaser.GameObjects.Rectangle;
   private lightGlows: LightGlow[] = [];
   private waterShimmers: Phaser.GameObjects.Rectangle[] = [];
-  private wanderingAnimals: {
-    sprite: Phaser.GameObjects.Sprite;
-    homeX: number;
-    homeY: number;
-    vx: number;
-    vy: number;
-    timer: number;
-    walkAnim: string;
-    idleAnim: string;
-  }[] = [];
+  private wanderingAnimals: WanderingAnimal[] = [];
   private saveTimer = 0;
   private sleeping = false;
   private playerLabel?: DomLabel;
@@ -218,9 +254,32 @@ export class WorldScene extends Phaser.Scene {
     if (!targetKind) return;
     const n = this.nodes.find((item) => item.kind === targetKind);
     if (n) {
+      this.tweens.killTweensOf(n.sprite);
       n.sprite.setVisible(false);
       if (n.label) n.label.el.style.display = 'none';
     }
+  }
+
+  private isAnimalBlocked(x: number, y: number, isWater = false): boolean {
+    if (isWater) {
+      if (
+        x < NILE_WATER_BOUNDS.minX ||
+        x > NILE_WATER_BOUNDS.maxX ||
+        y < NILE_WATER_BOUNDS.minY ||
+        y > NILE_WATER_BOUNDS.maxY
+      ) {
+        return true;
+      }
+      // Holzsteg der Fischer meiden
+      if (x >= 590 && x <= 624 && y >= 340 && y <= 366) return true;
+      return false;
+    }
+    for (const b of BUILDING_OBSTACLES) {
+      if (x >= b.minX && x <= b.maxX && y >= b.minY && y <= b.maxY) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // ---------------------------------------------------------------- Weltaufbau & Themenböden
@@ -813,7 +872,7 @@ export class WorldScene extends Phaser.Scene {
       kheti.label = this.addLabel(520, 157, '👩‍🌾 Bäuerin Kheti', '#86efac');
 
       // Belebte Nil-Nutztiere (Pflugochse, Ziege & Dorfhuhn - maßstabsgerecht & animiert)
-      const ox = this.add.sprite(388, 295, 'animal_cow', 0).setScale(0.42).setDepth(295);
+      const ox = this.add.sprite(388, 295, 'animal_cow', 0).setScale(0.55).setDepth(295);
       ox.anims.play('idle-cow', true);
       this.wanderingAnimals.push({
         sprite: ox,
@@ -868,10 +927,10 @@ export class WorldScene extends Phaser.Scene {
 
     // 4. Kapitel 4+: Ober-Schreiber Ani & Einbalsamierer
     if (ch >= 4) {
-      const ani = this.addNode('egypt_ani', 'npc_ani', 0, 240, 345);
-      ani.sprite.setDepth(345);
+      const ani = this.addNode('egypt_ani', 'npc_ani', 0, 216, 335);
+      ani.sprite.setDepth(335);
       ani.sprite.anims.play('idle-ani', true);
-      ani.label = this.addLabel(240, 320, '📜 Ober-Schreiber Ani (Kap. 4)', '#a78bfa', ch === 4);
+      ani.label = this.addLabel(216, 310, '📜 Ober-Schreiber Ani (Kap. 4)', '#a78bfa', ch === 4);
 
       const mum = this.addNode('egypt_kheti', 'npc_mummy', 0, 162, 362);
       mum.sprite.setDepth(362);
@@ -957,6 +1016,7 @@ export class WorldScene extends Phaser.Scene {
       timer: 1800,
       walkAnim: 'swim-duck',
       idleAnim: 'swim-duck',
+      isWaterAnimal: true,
     });
 
     const duck2 = this.add.sprite(678, 376, 'animal_duck', 0).setScale(1.0).setDepth(376);
@@ -970,6 +1030,7 @@ export class WorldScene extends Phaser.Scene {
       timer: 2400,
       walkAnim: 'swim-duck',
       idleAnim: 'swim-duck',
+      isWaterAnimal: true,
     });
 
     // B. Nil-Singvogel / Reihervogel (pickt am Schilfrand)
@@ -986,7 +1047,8 @@ export class WorldScene extends Phaser.Scene {
     // E. Tempel-Fauna (ab Kap. 4: Horus-Falke auf dem Pylon & Pavian im Hof)
     if (ch >= 4) {
       this.add.image(380, 140, 'zoo_b02', 'falcon_1').setScale(0.5).setDepth(145);
-      this.add.image(285, 338, 'zoo_b02', 'baboon_seated').setScale(0.5).setDepth(338);
+      // Entzerrt (§ 1.2): Im ruhigen Tempel-Innenhof neben dem Lotusbecken, frei von Bauplätzen
+      this.add.image(348, 305, 'zoo_b02', 'baboon_seated').setScale(0.5).setDepth(305);
     }
 
     // F. Wüsten-Fauna (ab Kap. 5: Dorcas-Gazellenbock & Gazellenkuh an den offenen Gizeh-Dünen)
@@ -999,44 +1061,47 @@ export class WorldScene extends Phaser.Scene {
   private placeEgyptRelics(): void {
     const ch = state.chapter;
 
+    const spawnRelic = (kind: Kind, x: number, y: number, labelText: string) => {
+      // In-World-Entdeckungsmarker gemäß snes-history-game Skill (§ 2.6)
+      const n = this.addNode(kind, 'relic_marker_glow', undefined, x, y);
+      n.sprite.setOrigin(0.5, 0.8).setScale(0.85).setDepth(y);
+      this.tweens.add({
+        targets: n.sprite,
+        y: y - 4,
+        scale: 0.95,
+        alpha: 0.85,
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+      n.label = this.addLabel(x, y - 24, labelText, '#fde047');
+      return n;
+    };
+
     // 1. Skarabäus-Amulett (ab Kapitel 1 am Schilfufer)
     if (ch >= 1 && !state.relicsFound.includes('skanabaeus')) {
-      const n = this.addNode('egypt_relic_skanabaeus', 'relic_skanabaeus', undefined, 574, 396);
-      n.sprite.setScale(0.7);
-      n.sprite.setDepth(396);
-      n.label = this.addLabel(574, 372, '🪲 Skarabäus-Amulett (E)', '#fde047');
+      spawnRelic('egypt_relic_skanabaeus', 574, 396, '🪲 Skarabäus-Amulett (E)');
     }
 
-    // 2. Kanopenkrug (ab Kapitel 4 nahe der Balsamierungshalle)
+    // 2. Kanopenkrug (ab Kapitel 4 nahe der Balsamierungshalle & Sarkophag, entzerrt von Tempelpylon)
     if (ch >= 4 && !state.relicsFound.includes('kanope')) {
-      const n = this.addNode('egypt_relic_kanope', 'relic_kanope', undefined, 195, 325);
-      n.sprite.setScale(0.7);
-      n.sprite.setDepth(325);
-      n.label = this.addLabel(195, 301, '🏺 Kanopenkrug (E)', '#fde047');
+      spawnRelic('egypt_relic_kanope', 155, 425, '🏺 Kanopenkrug (E)');
     }
 
-    // 3. Papyrus-Totenbuchrolle (ab Kapitel 4 beim Haus des Lebens)
+    // 3. Papyrus-Totenbuchrolle (ab Kapitel 4 auf dem offenen Platz südlich des Tempels, entzerrt von Hauswänden)
     if (ch >= 4 && !state.relicsFound.includes('papyrusrolle')) {
-      const n = this.addNode('egypt_relic_papyrusrolle', 'relic_papyrusrolle', undefined, 265, 360);
-      n.sprite.setScale(0.7);
-      n.sprite.setDepth(360);
-      n.label = this.addLabel(265, 336, '📜 Papyrus-Totenbuch (E)', '#fde047');
+      spawnRelic('egypt_relic_papyrusrolle', 235, 415, '📜 Papyrus-Totenbuch (E)');
     }
 
     // 4. Goldene Totenmaske (ab Kapitel 5 auf dem Gizeh-Plateau)
     if (ch >= 5 && !state.relicsFound.includes('goldmaske')) {
-      const n = this.addNode('egypt_relic_goldmaske', 'relic_goldmaske', undefined, 80, 95);
-      n.sprite.setScale(0.7);
-      n.sprite.setDepth(95);
-      n.label = this.addLabel(80, 71, '👑 Goldene Totenmaske (E)', '#fde047');
+      spawnRelic('egypt_relic_goldmaske', 80, 95, '👑 Goldene Totenmaske (E)');
     }
 
     // 5. Königliche Schreiberpalette (ab Kapitel 6 am Nilhafen-Basar)
     if (ch >= 6 && !state.relicsFound.includes('pinsel_tinte')) {
-      const n = this.addNode('egypt_relic_pinsel_tinte', 'relic_pinsel_tinte', undefined, 445, 450);
-      n.sprite.setScale(0.7);
-      n.sprite.setDepth(450);
-      n.label = this.addLabel(445, 426, '🖌️ Schreiberpalette (E)', '#fde047');
+      spawnRelic('egypt_relic_pinsel_tinte', 445, 450, '🖌️ Schreiberpalette (E)');
     }
   }
 
@@ -1178,8 +1243,19 @@ export class WorldScene extends Phaser.Scene {
         sh.setAlpha(0.2 + 0.35 * Math.abs(Math.sin(t * 0.003 + i)));
       }
 
-      // Sanfte Bewegung der Nil-Nutztiere auf der Uferweide
+      // Sanfte Bewegung der Nil-Nutztiere auf der Uferweide & Enten auf dem Nil
       for (const a of this.wanderingAnimals) {
+        // Proximity-Pause: Wenn Spieler sehr nah (< 28px) und kein Wassertier -> Tier pausiert scheu/respektvoll
+        if (this.player && !a.isWaterAnimal) {
+          const distToPlayer = Math.hypot(this.player.x - a.sprite.x, this.player.y - a.sprite.y);
+          if (distToPlayer < 28 && (a.vx !== 0 || a.vy !== 0)) {
+            a.vx = 0;
+            a.vy = 0;
+            a.timer = 1200;
+            a.sprite.anims.play(a.idleAnim, true);
+          }
+        }
+
         a.timer -= delta;
         if (a.timer <= 0) {
           if (a.vx !== 0 || a.vy !== 0) {
@@ -1190,17 +1266,53 @@ export class WorldScene extends Phaser.Scene {
           } else {
             const dx = a.homeX - a.sprite.x;
             const dy = a.homeY - a.sprite.y;
-            const dirAngle = Math.hypot(dx, dy) > 22 ? Math.atan2(dy, dx) : Math.random() * Math.PI * 2;
-            a.vx = Math.cos(dirAngle) * 10;
-            a.vy = Math.sin(dirAngle) * 10;
-            a.timer = 1200 + Math.random() * 1200;
-            a.sprite.setFlipX(a.vx < 0);
-            a.sprite.anims.play(a.walkAnim, true);
+            const distFromHome = Math.hypot(dx, dy);
+
+            // Bis zu 5 Versuche für einen freien Weg ohne Hinderniskollision
+            const preferredAngle = distFromHome > 24 ? Math.atan2(dy, dx) : Math.random() * Math.PI * 2;
+            let chosenAngle = preferredAngle;
+            let valid = false;
+
+            for (let attempt = 0; attempt < 5; attempt++) {
+              const testAngle = attempt === 0 ? preferredAngle : Math.random() * Math.PI * 2;
+              const testX = a.sprite.x + Math.cos(testAngle) * 16;
+              const testY = a.sprite.y + Math.sin(testAngle) * 16;
+              if (!this.isAnimalBlocked(testX, testY, a.isWaterAnimal)) {
+                chosenAngle = testAngle;
+                valid = true;
+                break;
+              }
+            }
+
+            if (valid || !this.isAnimalBlocked(a.sprite.x + Math.cos(chosenAngle) * 8, a.sprite.y + Math.sin(chosenAngle) * 8, a.isWaterAnimal)) {
+              const speed = 9 + Math.random() * 3;
+              a.vx = Math.cos(chosenAngle) * speed;
+              a.vy = Math.sin(chosenAngle) * speed;
+              a.timer = 1400 + Math.random() * 1200;
+              a.sprite.setFlipX(a.vx < 0);
+              a.sprite.anims.play(a.walkAnim, true);
+            } else {
+              // Eingekeilt oder am Uferrand -> kurz rasten und umsehen
+              a.timer = 1200 + Math.random() * 800;
+              a.sprite.anims.play(a.idleAnim, true);
+            }
           }
         }
-        a.sprite.x += (a.vx * delta) / 1000;
-        a.sprite.y += (a.vy * delta) / 1000;
-        a.sprite.setDepth(a.sprite.y);
+
+        const nextX = a.sprite.x + (a.vx * delta) / 1000;
+        const nextY = a.sprite.y + (a.vy * delta) / 1000;
+
+        if (!this.isAnimalBlocked(nextX, nextY, a.isWaterAnimal)) {
+          a.sprite.x = nextX;
+          a.sprite.y = nextY;
+          a.sprite.setDepth(a.sprite.y);
+        } else {
+          // Hindernis getroffen -> Richtung umkehren und Idle aktivieren
+          a.vx = -a.vx;
+          a.vy = -a.vy;
+          a.sprite.anims.play(a.idleAnim, true);
+          a.timer = 1500;
+        }
       }
     }
 
@@ -1461,6 +1573,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private collectRelic(id: string, n: Node): void {
+    this.tweens.killTweensOf(n.sprite);
     n.sprite.setVisible(false);
     if (n.label) n.label.el.style.display = 'none';
     state.emit('openRelicQuiz', id);
