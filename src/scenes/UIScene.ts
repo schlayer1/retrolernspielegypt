@@ -108,6 +108,7 @@ export class UIScene extends Phaser.Scene {
   private spec?: DialogSpec;
   private nodeIdx = 0;
   private questionActive = false;
+  private visibleRecipes: EgyptRecipe[] = [];
 
   constructor() {
     super('UI');
@@ -360,6 +361,13 @@ export class UIScene extends Phaser.Scene {
         this.togglePanel('cert');
         return;
       }
+      if (e.key >= '1' && e.key <= '9') {
+        const num = parseInt(e.key, 10) - 1;
+        if (this.activePanel === 'craft') {
+          this.craftRecipe(num);
+          return;
+        }
+      }
       if (e.key === 'e' || e.key === 'E' || e.key === ' ' || e.key === 'Enter') {
         if (this.dialogEl.style.display !== 'none') {
           this.advanceDialog();
@@ -570,6 +578,7 @@ export class UIScene extends Phaser.Scene {
 
   private closeModal(): void {
     this.backdropEl.style.display = 'none';
+    this.modalCardEl.classList.remove('dark');
     this.activePanel = 'none';
     state.modal = false;
     state.lastModalClose = Date.now();
@@ -1230,48 +1239,98 @@ export class UIScene extends Phaser.Scene {
   }
 
   private openCraft(): void {
-    this.openModal('craft', 'Handwerk & Baukunst');
-    const recipes = RECIPES;
+    this.openModal('craft', '🔨 Handwerk, Weben & Baukunst (C)');
+    this.modalCardEl.classList.add('dark');
+    this.visibleRecipes = RECIPES.filter((r) => r.minChapter <= state.chapter);
 
-    this.modalBodyEl.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        ${recipes.map((r) => {
-          const can = state.canCraft(r);
-          const costStr = Object.entries(r.cost).map(([id, num]) => {
-            const has = state.count(id);
-            const def = ITEMS[id as EgyptItemId];
-            const ok = has >= (num ?? 0);
-            return `<span style="color:${ok ? '#86efac' : '#f87171'}">${num}× ${def?.name ?? id} (${has}/${num})</span>`;
-          }).join(', ');
+    if (this.visibleRecipes.length === 0) {
+      this.modalBodyEl.innerHTML = `
+        <div style="padding:28px 16px;text-align:center;color:#ffe9b0;font-size:15px;font-weight:600;">
+          🔨 In diesem Kapitel sind noch keine Handwerksrezepte verfügbar.
+        </div>
+      `;
+      this.modalFooterEl.innerHTML = '';
+      return;
+    }
 
-          return `
-            <div style="background:#2a1d10;border:1.5px solid ${can ? '#e8c170' : '#475569'};border-radius:8px;padding:10px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <strong style="color:${can ? '#ffe9b0' : '#94a3b8'};font-size:14px;">${escapeHtml(r.name)}</strong>
-                <button class="retro-btn btn-craft" data-id="${r.id}" ${can ? '' : 'disabled'}>
-                  ${can ? 'Herstellen 🔨' : 'Material fehlt'}
-                </button>
-              </div>
-              <p style="font-size:12px;color:#cbd5e1;margin:4px 0 6px;">${escapeHtml(r.desc)}</p>
-              <div style="font-size:12px;">Kosten: ${costStr}</div>
+    const cards = this.visibleRecipes.map((r, i) => {
+      const canMat = state.canAfford(r);
+      const hasBld = !r.requiresBuilding || state.hasBuilding(r.requiresBuilding);
+      const canCraft = canMat && hasBld;
+      const cls = canCraft ? 'recipe-card affordable' : !hasBld ? 'recipe-card missing-bld' : 'recipe-card';
+      const iconId = r.result ? r.result.item : r.id;
+
+      const costStr = Object.entries(r.cost)
+        .map(([id, num]) => {
+          const has = state.count(id);
+          const def = ITEMS[id as EgyptItemId];
+          return `${num}× ${def?.name ?? id} (du hast ${has})`;
+        })
+        .join(', ');
+
+      const bDef = r.requiresBuilding ? BUILDINGS.find((b) => b.id === r.requiresBuilding) : null;
+      const bName = bDef?.name ?? r.requiresBuilding;
+
+      return `
+        <div class="${cls}" data-craft-idx="${i}">
+          <img class="pixel-icon" src="assets/icons/${iconId}.png" alt="${escapeHtml(r.name)}" style="width:32px;height:32px;margin-top:2px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none'" />
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:800;font-size:14.5px;color:#ffe9b0;display:flex;align-items:center;gap:6px;">
+              <span class="key-badge" style="background:#e8c170;color:#1a1208;padding:1px 5px;border-radius:3px;font-size:11px;font-weight:800;">${i + 1}</span>
+              <span>${escapeHtml(r.name)}</span>
             </div>
-          `;
-        }).join('')}
-      </div>
-    `;
+            <div style="font-size:12.5px;color:#d6c7b2;margin:2px 0 4px;line-height:1.35;">${highlightTerms(r.desc)}</div>
+            <div style="font-size:12px;color:${canMat ? '#86efac' : '#fca5a5'};font-weight:700;">
+              Kosten: ${escapeHtml(costStr)}
+            </div>
+            ${
+              bName
+                ? `<div style="font-size:11.5px;font-weight:700;color:${hasBld ? '#93c5fd' : '#fbbf24'};margin-top:2px;">
+                    ${hasBld ? `✓ Werkstatt bereit: ${escapeHtml(bName)}` : `⚠ Benötigt Dorf-Gebäude: ${escapeHtml(bName)}`}
+                  </div>`
+                : ''
+            }
+          </div>
+        </div>
+      `;
+    });
 
-    this.modalBodyEl.querySelectorAll('.btn-craft').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
-        const r = recipes.find((x) => x.id === id);
-        if (r && state.craft(r)) {
-          this.toast(`Hergestellt: ${r.name}!`);
-          this.openCraft();
-        }
+    this.modalBodyEl.innerHTML = `<div class="grid-2col">${cards.join('')}</div>`;
+
+    this.modalBodyEl.querySelectorAll('[data-craft-idx]').forEach((el) => {
+      el.addEventListener('click', () => {
+        const idx = Number((el as HTMLElement).dataset.craftIdx);
+        this.craftRecipe(idx);
       });
     });
 
-    this.modalFooterEl.innerHTML = '';
+    this.modalFooterEl.innerHTML = `
+      <span style="font-size:12px;color:#ffe9b0;font-weight:600;">
+        Tipp: Klicke auf eine Karte oder drücke die Zifferntaste [1–${this.visibleRecipes.length}] zum Herstellen.
+      </span>
+    `;
+  }
+
+  private craftRecipe(idx: number): void {
+    const r = this.visibleRecipes[idx];
+    if (this.activePanel !== 'craft' || !r) return;
+
+    if (r.requiresBuilding && !state.hasBuilding(r.requiresBuilding)) {
+      const bDef = BUILDINGS.find((b) => b.id === r.requiresBuilding);
+      const bName = bDef?.name ?? r.requiresBuilding;
+      this.toast(`Baue zuerst „${bName}“ an einem Bauplatz im Dorf!`);
+      return;
+    }
+
+    if (!state.canAfford(r)) {
+      this.toast('Dafür fehlt dir noch Material.');
+      return;
+    }
+
+    if (state.craft(r)) {
+      this.toast(`Hergestellt: ${r.name}!`);
+      this.openCraft();
+    }
   }
 
   private openTrade(): void {

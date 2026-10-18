@@ -63,6 +63,7 @@ export interface EgyptRecipe {
   cost: Partial<Record<EgyptItemId, number>>;
   result?: { item: EgyptItemId; count: number };
   requiresBuilding?: string;
+  minChapter: number;
 }
 
 export interface EgyptTradeOffer {
@@ -354,6 +355,7 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Aus Papyrusrohr und Stöcken eine Reuse für das Nilufer flechten.',
     cost: { papyrus_staengel: 2, stock: 1 },
     result: { item: 'fischreuse', count: 1 },
+    minChapter: 1,
   },
   {
     id: 'cooked_fish',
@@ -361,6 +363,7 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Frisch gefangenen Nilbarsch am knisternden Lagerfeuer knusprig garen.',
     cost: { nilbarsch: 1 },
     result: { item: 'cooked_fish', count: 1 },
+    minChapter: 1,
   },
   {
     id: 'schaduf_teil',
@@ -368,6 +371,7 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Akazienholz mit Gegengewichtsstein und Lederschlaufe verbinden.',
     cost: { stock: 2, stein: 1, papyrus_staengel: 1 },
     result: { item: 'schaduf_teil', count: 1 },
+    minChapter: 2,
   },
   {
     id: 'lehmziegel',
@@ -375,6 +379,8 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Nilschlamm mit Strohhäcksel mischen und in Formen trocknen.',
     cost: { nilschlamm: 2, papyrus_staengel: 1 },
     result: { item: 'lehmziegel', count: 2 },
+    requiresBuilding: 'ziegelei',
+    minChapter: 3,
   },
   {
     id: 'tontopf',
@@ -382,6 +388,7 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Schlick auf der Töpferscheibe formen und im Ofen härten.',
     cost: { nilschlamm: 2 },
     result: { item: 'tontopf', count: 1 },
+    minChapter: 3,
   },
   {
     id: 'leinen',
@@ -389,6 +396,7 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Aus Flachs- und Papyrusfasern Garn spinnen und auf dem Rahmen weben.',
     cost: { papyrus_staengel: 2 },
     result: { item: 'leinen', count: 1 },
+    minChapter: 3,
   },
   {
     id: 'brot',
@@ -396,6 +404,7 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Gemahlenen Emmer mit Wasser kneten und auf heißen Steinen backen.',
     cost: { emmer: 1, wasser: 1 },
     result: { item: 'brot', count: 2 },
+    minChapter: 3,
   },
   {
     id: 'bier',
@@ -403,6 +412,7 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Nahrhaftes Dickbier im Krug mit Wasser und Datteln vergären lassen.',
     cost: { emmer: 1, wasser: 1 },
     result: { item: 'bier', count: 1 },
+    minChapter: 3,
   },
   {
     id: 'papyrusrolle',
@@ -410,6 +420,8 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Schilfmark in Streifen kreuzen, feucht schlagen und trocknen.',
     cost: { papyrus_staengel: 2, wasser: 1 },
     result: { item: 'papyrusrolle', count: 1 },
+    requiresBuilding: 'schreiberhaus',
+    minChapter: 4,
   },
   {
     id: 'pinsel_tinte',
@@ -417,6 +429,7 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Binsenstängel kauen und Lampenruß mit Wasser anrühren.',
     cost: { stock: 1, wasser: 1 },
     result: { item: 'pinsel_tinte', count: 1 },
+    minChapter: 4,
   },
   {
     id: 'kanope',
@@ -424,6 +437,8 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Kalksteingefäß mit dem Kopf der vier Schutzgötter des Horus gestalten.',
     cost: { stein: 1, nilschlamm: 1 },
     result: { item: 'kanope', count: 1 },
+    requiresBuilding: 'wabet',
+    minChapter: 4,
   },
   {
     id: 'skanabaeus',
@@ -431,6 +446,7 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Fayence-Amulett des heiligen Pillendrehers als Grabbeigabe brennen.',
     cost: { stein: 1, nilschlamm: 1 },
     result: { item: 'skanabaeus', count: 1 },
+    minChapter: 4,
   },
   {
     id: 'getreidesack',
@@ -438,6 +454,7 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Überschüssigen Emmer in Leinensäcke füllen und siegeln.',
     cost: { emmer: 2, leinen: 1 },
     result: { item: 'getreidesack', count: 1 },
+    minChapter: 6,
   },
   {
     id: 'goldmaske',
@@ -445,6 +462,7 @@ export const RECIPES: EgyptRecipe[] = [
     desc: 'Reines nubisches Blattgold über eine Holzform treiben.',
     cost: { gold: 1, leinen: 1 },
     result: { item: 'goldmaske', count: 1 },
+    minChapter: 6,
   },
 ];
 
