@@ -326,6 +326,19 @@ export class BootScene extends Phaser.Scene {
     this.load.image('relic_pinsel_tinte', 'assets/icons/pinsel_tinte.png');
     this.load.image('relic_marker_glow', 'assets/icons/relic_marker_glow.png');
     this.load.image('icon_relic_marker_glow', 'assets/icons/relic_marker_glow.png');
+
+    // 5. Hochdetaillierte 16-Bit-Acker- & Umgebungs-Assets (aus Steinzeit-Adaption)
+    this.load.image('farm_soil_raw', 'assets/props/farm_soil_raw.png');
+    this.load.image('farm_soil_dry', 'assets/props/farm_soil_dry.png');
+    this.load.image('farm_soil_seeded', 'assets/props/farm_soil_seeded.png');
+    this.load.image('farm_soil_wet', 'assets/props/farm_soil_wet.png');
+    this.load.image('farm_wheat_sprout', 'assets/props/farm_wheat_sprout.png');
+    this.load.image('farm_wheat_ripe', 'assets/props/farm_wheat_ripe.png');
+    this.load.image('prop_haystack', 'assets/props/haystack.png');
+    this.load.image('prop_clay_pile', 'assets/props/clay_pile.png');
+    this.load.image('prop_pots_group', 'assets/props/pots_group.png');
+    this.load.image('prop_wood_stack', 'assets/props/wood_stack.png');
+    this.load.image('prop_water_trough', 'assets/props/water_trough.png');
   }
 
   create(): void {

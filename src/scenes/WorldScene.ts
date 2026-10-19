@@ -566,6 +566,12 @@ export class WorldScene extends Phaser.Scene {
       this.placeProp(402, 246, 'city_b04', 'grain_basket', { scale: 0.65 });
       this.placeProp(532, 222, 'city_b02', 'amphora_red', { scale: 0.6 });
       this.placeProp(532, 256, 'city_b02', 'water_basin_square', { scale: 0.6 });
+
+      // Hochdetaillierte Dorf- und Acker-Props (aus Steinzeit-Adaption)
+      this.placeProp(404, 276, 'prop_haystack', undefined, { scale: 0.65, hitW: 22, hitH: 12, hitOffsetY: 8 });
+      this.placeProp(468, 280, 'prop_water_trough', undefined, { scale: 0.6, hitW: 20, hitH: 10, hitOffsetY: 6 });
+      this.placeProp(538, 278, 'prop_pots_group', undefined, { scale: 0.6, hitW: 18, hitH: 10, hitOffsetY: 6 });
+      this.placeProp(566, 324, 'prop_clay_pile', undefined, { scale: 0.6, hitW: 20, hitH: 10, hitOffsetY: 6 });
     }
 
     // Echte 16-Bit-Dattelpalmen (mit schlanker Stamm-Fußkollision)
@@ -652,6 +658,8 @@ export class WorldScene extends Phaser.Scene {
       this.placeProp(412, 195, 'city_b01', 'statue_lion_r', { scale: 0.65 });
       this.addTorchWithGlow(336, 168, 0.65);
       this.addTorchWithGlow(384, 168, 0.65);
+      this.placeProp(386, 215, 'prop_pots_group', undefined, { scale: 0.65, hitW: 18, hitH: 10, hitOffsetY: 6 });
+      this.placeProp(308, 225, 'prop_wood_stack', undefined, { scale: 0.65, hitW: 20, hitH: 10, hitOffsetY: 6 });
       this.addLabel(360, 108, '🏛️ Königlicher Hof des Wesirs', '#f59e0b');
     }
 
@@ -747,6 +755,7 @@ export class WorldScene extends Phaser.Scene {
       ramp.sprite.setScale(0.75);
       ramp.sprite.setDepth(168);
       ramp.label = this.addLabel(116, 144, '🪵 Baustellenrampe & Schlitten (E)', '#60a5fa');
+      this.placeProp(96, 250, 'prop_wood_stack', undefined, { scale: 0.7, hitW: 22, hitH: 12, hitOffsetY: 8 });
     }
 
     // =========================================================================
@@ -982,9 +991,9 @@ export class WorldScene extends Phaser.Scene {
       for (let i = 0; i < 6; i++) {
         const px = 430 + (i % 3) * 32;
         const py = 230 + Math.floor(i / 3) * 32;
-        const node = this.addNode('plot', 'farm', 'soil_raw', px, py);
+        const node = this.addNode('plot', 'farm_soil_raw', undefined, px, py);
         node.plotId = i;
-        node.sprite.setDepth(py);
+        node.sprite.setDisplaySize(24, 24).setDepth(py);
         this.refreshPlotVisual(node);
       }
     }
@@ -1453,17 +1462,23 @@ export class WorldScene extends Phaser.Scene {
   private refreshPlotVisual(node: Node): void {
     if (node.plotId === undefined) return;
     const p = state.plots[node.plotId];
+    if (!p) return;
+    if (node.cropSprite) {
+      node.cropSprite.destroy();
+      node.cropSprite = undefined;
+    }
+
     if (p.stage === 'raw') {
-      node.sprite.setFrame('soil_raw');
+      node.sprite.setTexture('farm_soil_raw').setDisplaySize(24, 24).setOrigin(0.5, 0.5).setAlpha(1);
     } else if (p.stage === 'tilled') {
-      node.sprite.setFrame('soil_dry');
-    } else if (p.stage === 'seeded' || p.stage === 'watered') {
-      node.sprite.setFrame('soil_wet');
+      node.sprite.setTexture('farm_soil_dry').setDisplaySize(24, 24).setOrigin(0.5, 0.5).setAlpha(1);
+    } else if (p.stage === 'seeded') {
+      node.sprite.setTexture('farm_soil_seeded').setDisplaySize(24, 24).setOrigin(0.5, 0.5).setAlpha(1);
+    } else if (p.stage === 'watered') {
+      node.sprite.setTexture('farm_soil_wet').setDisplaySize(24, 24).setOrigin(0.5, 0.5).setAlpha(1);
     } else if (p.stage === 'ripe') {
-      node.sprite.setFrame('soil_wet');
-      if (!node.cropSprite) {
-        node.cropSprite = this.add.image(node.sprite.x, node.sprite.y - 8, 'farm', 'wheat_ripe').setDepth(node.sprite.y + 1);
-      }
+      // Reifer Emmer-Weizen wächst stolz aus der Erde hervor (48x54 nativ -> 24x27 im Spiel, wie im Steinzeit-Projekt)
+      node.sprite.setTexture('farm_wheat_ripe').setDisplaySize(24, 27).setOrigin(0.5, 0.56).setAlpha(1);
     }
   }
 
@@ -2080,12 +2095,48 @@ export class WorldScene extends Phaser.Scene {
     }
 
     const curHint = ch.hints[q] || ch.quests[q] || 'Erfülle deine aktuelle Aufgabe auf den Feldern!';
+    const ameniBriefings: Record<number, Array<{ text: string }>> = {
+      1: [
+        { text: 'Die alljährliche Nilflut (<strong>Akhet</strong>) geht zu Ende! Aber wie viel fruchtbaren Schlamm und Wasser hat uns der Strom gebracht?' },
+        { text: 'Gehe zum antiken <strong>Nilometer</strong> am Ufer und lies den Pegelstand ab (Taste E).\n\nSteigt das Wasser auf 16 Ellen, erwartet uns ein Rekordjahr! Zu wenig Wasser bringt Hunger, zu viel reißt unsere Hütten fort.' },
+      ],
+      2: [
+        { text: 'Die Flut weicht zurück, doch unsere Felder liegen höher als der Fluss. Wasser fließt niemals von allein bergauf!' },
+        { text: 'Deshalb erfanden wir den <strong>Schaduf</strong>: Einen genialen Schwinghebel mit einem schweren Gegengewicht aus Nilschlamm und Stein.' },
+        { text: 'Öffne dein <strong>Handwerksmenü (Taste C)</strong> und zimmere den Schaduf-Hebelarm!' },
+      ],
+      3: [
+        { text: 'Der Hebelarm ist perfekt gezimmert! Tritt an den Bauplatz an der Uferböschung und errichte das <strong>Schaduf-Schöpfwerk (Taste E)</strong>.' },
+      ],
+      4: [
+        { text: 'Sieh nur, wie leicht der Hebelarm schwingt! Drücke Taste E am errichteten Schaduf.' },
+        { text: 'Das schwere Gegengewicht zieht den gefüllten Eimer fast ohne menschlichen Kraftaufwand nach oben. Fülle deinen Tonkrug mit frischem Flusswasser!' },
+      ],
+      5: [
+        { text: 'Der feuchte Nilschlamm auf unseren Feldern ist der nährstoffreichste Boden der Welt!' },
+        { text: 'Tritt an eines der Ackerbeete: Lockere mit Taste E den Boden auf und drücke die wertvollen <strong>Emmer-Saat-Körner</strong> hinein.' },
+      ],
+      6: [
+        { text: 'Die glühende Sonne trocknet den Boden rasch aus. Ohne Wasser verbrennt der Keimling im Sand!' },
+        { text: 'Gieße dein frisch gesästes Beet nun mit dem geschöpften Nilwasserkrug (Taste E).' },
+      ],
+      7: [
+        { text: 'Während das Getreide heranreift, stärken wir uns mit der süßen Gabe der Oase: <strong>Datteln</strong>!' },
+        { text: 'Dattelpalmen schenken uns energiereiche Früchte, die sich monatelang lagern lassen. Pflücke 3× Datteln von den Oasenpalmen (Taste E).' },
+      ],
+      8: [
+        { text: 'Schau hinaus auf die Felder: Die Ähren wiegen sich goldgelb im Wind!' },
+        { text: '<strong>Emmer</strong> ist das wichtigste Urgetreide Ägyptens. Nimm deine Erntesichel und schneide das reife Korn ab (Taste E)!' },
+      ],
+    };
+
+    const ameniNodes = ameniBriefings[q] || [
+      { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
+      { text: `Tipp:\n${curHint}` },
+    ];
     state.openDialog({
       speaker: 'Feldhüter Ameni',
-      nodes: [
-        { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
-        { text: `Tipp:\n${curHint}` },
-      ],
+      nodes: ameniNodes,
     });
   }
 
@@ -2112,7 +2163,11 @@ export class WorldScene extends Phaser.Scene {
     if (q === 6 || state.isReadyForQuiz()) {
       state.openDialog({
         speaker: 'Fischer Senbi – Wissensprüfung',
-        nodes: ch.quiz as any,
+        nodes: [
+          { text: 'Großartig gefischt und gesammelt! Du beweist, dass du die Natur des Nilufers verstehst.' },
+          { text: 'Nun wollen wir prüfen, was du über das Land Kemet und die Lebensader des Nils gelernt hast. Tritt vor zur Wissensprüfung!' },
+          ...(ch.quiz as any),
+        ],
         onDone: () => {
           state.quest = ch.quests.length;
           state.unlockLexicon('kemet');
@@ -2153,12 +2208,37 @@ export class WorldScene extends Phaser.Scene {
     }
 
     const curHint = ch.hints[q] || ch.quests[q] || 'Erfülle deine aktuelle Aufgabe!';
+    const senbiBriefings: Record<number, Array<{ text: string }>> = {
+      1: [
+        { text: 'Sieh dir das hohe Schilf am Flussufer an! Die Ägypter nennen es <strong>Papyrus</strong>.' },
+        { text: 'Für uns Flussnomaden ist es das wertvollste Geschenk des Nils: Wir flechten daraus Körbe, Matten, feste Stricke und bauen sogar ganze Boote daraus!' },
+        { text: 'Schneide <strong>3× Papyrus-Schilf</strong> am sumpfigen Flussrand mit der Taste E.' },
+      ],
+      2: [
+        { text: 'Ein Fischer ohne Werkzeug bleibt am Nil hungrig! Mit bloßen Händen fängt man im schnellen Strom keine Beute.' },
+        { text: 'Suche am sandigen Ufer nach <strong>2 glatten Wüstenkieseln</strong> als Senkgewichte und sammle <strong>2 Akazienstöcke</strong> am Wüstenrand (E).' },
+      ],
+      3: [
+        { text: 'Jetzt binden wir die Reuse! Aus den Stöcken, Steinen und zähen Papyrusfasern flechten wir einen kegelförmigen Korb.' },
+        { text: 'Der Fisch schwimmt hinein, findet aber durch die nach innen zeigenden Schilfspitzen nicht mehr heraus. Öffne dein <strong>Handwerksmenü (Taste C)</strong> und stelle die Fischreuse her!' },
+      ],
+      4: [
+        { text: 'Deine Reuse ist meisterhaft geflochten! Nun ab ans Wasser.' },
+        { text: 'Gehe zum Holzsteg am Nilufer und platziere die Reuse am <strong>Nilbarsch-Fischgrund (Taste E)</strong>. Die Fische hier sind groß und nahrhaft!' },
+      ],
+      5: [
+        { text: 'Ein herrlicher Fang! Doch in der brennenden Wüstensonne verdirbt roher Fisch binnen Stunden.' },
+        { text: 'Tritt an unser <strong>Lagerfeuer (Taste E)</strong> und brate den Fisch knusprig. Gebratener Fisch spendet dir Lebenskraft!' },
+      ],
+    };
+
+    const senbiNodes = senbiBriefings[q] || [
+      { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
+      { text: `Tipp:\n${curHint}` },
+    ];
     state.openDialog({
       speaker: 'Fischer Senbi',
-      nodes: [
-        { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
-        { text: `Tipp:\n${curHint}` },
-      ],
+      nodes: senbiNodes,
     });
   }
 
@@ -2200,8 +2280,13 @@ export class WorldScene extends Phaser.Scene {
 
     if (q === 8 || state.isReadyForQuiz()) {
       state.openDialog({
-        speaker: 'Wesir Nefermaat – Wissensprüfung',
-        nodes: ch.quiz as any,
+        speaker: 'Wesir Nefermaat – Königliche Abgabe & Wissensprüfung',
+        nodes: [
+          { text: 'Wunderbar! Du bringst die königlichen Lohnrationen: 2 knusprige Emmerbrote und den Krug dickes Gerstenbier.' },
+          { text: 'Damit ist die Entlohnung unserer Bauleute am Kornspeicher gesichert. Brot und Bier sind das Fundament unseres Staates – kein Arbeiter in Kemet muss darben!' },
+          { text: 'Nun wollen wir prüfen, ob du die Grundpfeiler des Pharaonenstaates, der Vorratswirtschaft und des Arbeiterlohns verstanden hast. Tritt vor zur Wissensprüfung!' },
+          ...(ch.quiz as any),
+        ],
         onDone: () => {
           state.quest = ch.quests.length;
           state.unlockLexicon('pharao');
@@ -2237,12 +2322,47 @@ export class WorldScene extends Phaser.Scene {
     }
 
     const curHint = ch.hints[q] || ch.quests[q] || 'Erfülle deine Aufgaben für den Wesir!';
+    const nefermaatBriefings: Record<number, Array<{ text: string }>> = {
+      1: [
+        { text: 'Als oberster Wesir organisiere ich den Staat für den Gottkönig. Doch um Städte und Speicher zu errichten, fehlt uns Holz in der Wüste.' },
+        { text: 'Dafür schenkt uns der Nil einen unerschöpflichen Schatz: <strong>Fruchtbaren Nilschlamm</strong>!\n\nGehe an das Flussufer und grabe mit der Schaufel fetten Schlamm aus (Taste E).' },
+      ],
+      2: [
+        { text: 'Aus feuchtem Schlick allein kann man keine stabilen Wände errichten. Wir müssen den Schlamm mit gehäckseltem Stroh mischen und in Holzformen pressen.' },
+        { text: 'Errichte die <strong>Königliche Lehmziegelei</strong> am Bauplatz nördlich der Felder (Taste E)!' },
+      ],
+      3: [
+        { text: 'Das Geheimnis der ägyptischen Ziegel: Wir brauchen kein Holzfeuer zum Brennen!\n\nDie glühende Sonne Kemets trocknet die Schlammziegel steinhart. Öffne das Handwerksmenü (Taste C) und streiche <strong>3× sonnengetrocknete Lehmziegel</strong>.' },
+      ],
+      4: [
+        { text: 'Ein weiser Herrscher sorgt vor! In fruchtbaren Jahren füllen wir gewaltige runde Silos, um Hungersnöte in Dürrejahren abzuwenden.' },
+        { text: 'Errichte den <strong>Königlichen Kornspeicher</strong> hier am Palasthof (Taste E)!' },
+      ],
+      5: [
+        { text: 'Getreide muss vor Feuchtigkeit, Käfern und Wüstenmäusen geschützt werden.' },
+        { text: 'Auf der Töpferscheibe formen wir dichte Vorratskrüge. Brenne einen <strong>gebrannten Vorratstopf</strong> im Handwerksmenü (Taste C)!' },
+      ],
+      6: [
+        { text: 'Im heißen Klima Ägyptens ist schwere Schafwolle unerträglich. Wir bauen Flachs an und spinnen daraus schneeweißes, kühles <strong>Leinentuch</strong>.' },
+        { text: 'Es ist das edle Gewand der Priester, Beamten und Schreiber. Webe feines Leinentuch im Handwerk (Taste C)!' },
+      ],
+      7: [
+        { text: 'Hör gut zu, junger Baumeister! Das ist eine der wichtigsten Lektionen über das Alte Ägypten:' },
+        { text: 'In unserem gesamten Reich gibt es <strong>kein Münzgeld</strong>! Es gibt weder Gold- noch Silbermünzen.' },
+        { text: 'Aber wie entlohnen wir die Zehntausende von Zimmerleuten, Deichbauern und Steinmetzen für ihre schwere Arbeit?\n\nDie Antwort lautet: <strong>Mit Naturalien als Arbeiterlohn (*Depu*)!</strong>' },
+        { text: 'Die staatliche Währung und das tägliche Zahlungsmittel sind <strong>Emmerbrot</strong> und nahrhaftes, dickflüssiges <strong>Gerstenbier</strong>. Ein Handwerker erhält feste Tagesrationen – typischerweise 5 Brote und 2 Krüge Bier am Tag!' },
+        { text: 'Brot und Bier sind Nahrung und Geld in einem: Wer Rationen spart, kann sie auf dem Markt gegen Töpfe, Sandalen oder Fisch eintauschen.' },
+        { text: 'Backe nun am Feuer <strong>2× Emmerbrot</strong> und braue <strong>1× dickes Bier</strong> (Taste C), um die Entlohnung für unsere Speicherbauer vorzubereiten!' },
+      ],
+    };
+
+    const nefermaatNodes = nefermaatBriefings[q] || [
+      { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
+      { text: `Tipp:\n${curHint}` },
+    ];
     state.openDialog({
       speaker: 'Wesir Nefermaat',
-      nodes: [
-        { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
-        { text: `Tipp:\n${curHint}` },
-      ],
+      nodes: nefermaatNodes,
     });
   }
 
@@ -2285,7 +2405,11 @@ export class WorldScene extends Phaser.Scene {
     if (q === 8 || state.isReadyForQuiz()) {
       state.openDialog({
         speaker: 'Ober-Schreiber Ani – Wissensprüfung',
-        nodes: ch.quiz as any,
+        nodes: [
+          { text: 'Meisterhaft! Du hast das Totenbuch, die heiligen Kanopen und den Schutzskarabäus vorbereitet.' },
+          { text: 'Nun prüfen wir dein Wissen über die Hieroglyphen, die Götterwelt und das Totengericht des Osiris!' },
+          ...(ch.quiz as any),
+        ],
         onDone: () => {
           state.quest = ch.quests.length;
           state.unlockLexicon('schreiber');
@@ -2322,12 +2446,46 @@ export class WorldScene extends Phaser.Scene {
     }
 
     const curHint = ch.hints[q] || ch.quests[q] || 'Erfülle deine Aufgaben im Haus des Lebens!';
+    const aniBriefings: Record<number, Array<{ text: string }>> = {
+      1: [
+        { text: 'Willkommen im Tempelbezirk! Die Ägypter sagen: „Schreiber sein ist das schönste Los auf Erden.“' },
+        { text: 'Ein Schreiber muss keine schweren Steine schleppen und keinen Pflug führen. Er dient Gott Thot, dem Schutzpatron der Weisheit.\n\nErrichte das <strong>Haus des Lebens (Per Ankh)</strong> am Bauplatz (Taste E)!' },
+      ],
+      2: [
+        { text: 'Auf Stein zu meißeln dauert Tage. Deshalb erfand Ägypten das erste Papier der Menschheit: <strong>Papyrus</strong>!' },
+        { text: 'Wir schneiden das weiße Innenmark der Papyrusstängel in dünne Streifen, legen sie kreuzweise übereinander und pressen sie fest zusammen. Der Pflanzensaft klebt sie untrennbar aneinander.' },
+        { text: 'Presse eine <strong>saubere Papyrusrolle</strong> im Handwerksmenü (Taste C)!' },
+      ],
+      3: [
+        { text: 'Zum Schreiben schneiden wir ein zähes Binsenrohr schräg an und kauen die Spitze faserig wie einen feinen Haarpinsel.' },
+        { text: 'Die schwarze Rußtinte rühren wir aus Lampenruß, Wasser und Gummiarabikum an. Sie verblasst selbst nach Jahrtausenden nicht!\n\nStelle <strong>Binsenpinsel und Rußtinte</strong> her (Taste C).' },
+      ],
+      4: [
+        { text: 'Die wichtigste Pflicht des Schreibers im Staat: Gerechtigkeit und Ordnung (<strong>Maat</strong>).' },
+        { text: 'Gehe zum königlichen Kornspeicher und notiere die Maße des abgelieferten Getreides in den Steuerrollen (Taste E)!' },
+      ],
+      5: [
+        { text: 'Für uns Ägypter ist der Tod nicht das Ende, sondern die Pforte zum ewigen Leben im Reich des Osiris.' },
+        { text: 'Damit die Seele (Ka und Ba) weiterleben kann, muss der Körper vor der Verwesung bewahrt werden!\n\nErrichte die <strong>Balsamierungswerkstatt (Wabet)</strong> des Gottes Anubis am westlichen Wüstenrand (Taste E).' },
+      ],
+      6: [
+        { text: '70 Tage lang wird der Körper in reinem <strong>Natronsalz</strong> aus den Wüstenseen getrocknet.' },
+        { text: 'Die 4 inneren Organe – Magen, Leber, Lunge und Darm – werden entnommen und in geweihten <strong>Kanopenkrügen</strong> mit den Köpfen der Horussöhne bestattet.' },
+        { text: 'Tausche Natronsalz am Basar und meißle einen Kanopenkrug im Handwerk (Taste C)!' },
+      ],
+      7: [
+        { text: 'Das Herz aber bleibt im Körper! Denn beim <strong>Totengericht des Osiris</strong> wiegt Anubis das Herz gegen die Feder der Göttin Maat.' },
+        { text: 'War der Mensch gerecht, ist das Herz federleicht. Damit das Herz vor Gericht keine Verfehlungen gesteht, legen wir einen <strong>Herz-Skarabäus</strong> auf die Brust.\n\nForme das Schutzamulett im Handwerk (Taste C)!' },
+      ],
+    };
+
+    const aniNodes = aniBriefings[q] || [
+      { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
+      { text: `Tipp:\n${curHint}` },
+    ];
     state.openDialog({
       speaker: 'Ober-Schreiber Ani',
-      nodes: [
-        { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
-        { text: `Tipp:\n${curHint}` },
-      ],
+      nodes: aniNodes,
     });
   }
 
@@ -2370,7 +2528,11 @@ export class WorldScene extends Phaser.Scene {
     if (q === 8 || state.isReadyForQuiz()) {
       state.openDialog({
         speaker: 'Baumeister Hemiunu – Wissensprüfung',
-        nodes: ch.quiz as any,
+        nodes: [
+          { text: 'Die Große Pyramide ragt in den Himmel und die Sphinx wacht über die Ewigkeit!' },
+          { text: 'Tritt vor zur großen Architekten-Prüfung über Baulogistik, Physik und die Monumente von Gizeh.' },
+          ...(ch.quiz as any),
+        ],
         onDone: () => {
           state.quest = ch.quests.length;
           state.unlockLexicon('pyramiden');
@@ -2406,12 +2568,45 @@ export class WorldScene extends Phaser.Scene {
     }
 
     const curHint = ch.hints[q] || ch.quests[q] || 'Erfülle deine Aufgaben auf der Großbaustelle!';
+    const hemiunuBriefings: Record<number, Array<{ text: string }>> = {
+      1: [
+        { text: 'Ich bin Hemiunu, oberster Baumeister des Gottkönigs Cheops. Hier auf dem Wüstenplateau von Gizeh errichten wir das gewaltigste Bauwerk der Menschheit!' },
+        { text: 'Vergiss alle Märchen über Sklavenpeitschen: Zehntausende freie Bauern und Steinmetze erbauen die Pyramide während der Flutzeit mit Stolz und werden bestens mit Fleisch, Brot und Bier versorgt!' },
+        { text: 'Errichte zuerst die <strong>Bauhütte und Steinmetzwerkstatt</strong> am Fuße des Plateaus (Taste E).' },
+      ],
+      2: [
+        { text: 'Für die glatte Außenhülle nutzen wir feinsten, blendend weißen <strong>Tura-Kalkstein</strong>.' },
+        { text: 'Unsere Steinmetze treiben trockene Holzkeile in die Felsspalten und gießen Wasser darauf. Das quellende Holz sprengt selbst 10-Tonnen-Quader ab!\n\nBrich 3× Kalksteinquader im Steinbruch (Taste E).' },
+      ],
+      3: [
+        { text: 'Räder würden im tiefen Wüstensand versinken und unter 2,5 Tonnen Quadergewicht zerbrechen!' },
+        { text: 'Deshalb ziehen wir die Blöcke auf gewaltigen <strong>Holzschlitten</strong> über befestigte Rampen. Schlage schweres Bauholz für Schlitten und Rollbalken (Taste E).' },
+      ],
+      4: [
+        { text: 'Nun kommt unser größter physikalischer Trick: Wenn wir Nilschlamm und Wasser direkt vor die Schlittenkufen gießen, verflüssigt sich der Sand – <strong>die benötigte Zugkraft halbiert sich</strong>!' },
+        { text: 'Befeuchte die Baustellenrampe mit Schlammwasser (Taste E).' },
+      ],
+      5: [
+        { text: 'Das <strong>Pyramidion</strong> – der glänzende Deckstein – krönt die Spitze der Pyramide.' },
+        { text: 'Es fängt die ersten Strahlen des Sonnengottes Ra ein. Liefere den polierten Deckstein zur Großen Pyramide (Taste E)!' },
+      ],
+      6: [
+        { text: 'Am Fuße des Aufwegs wacht der König als mächtiger Wüstenlöwe: <strong>Die Große Sphinx von Gizeh</strong>!' },
+        { text: 'Aus einem natürlichen Kalksteinfelsen gehauen, beschützt sie die Grabanlage vor bösen Mächten. Tritt heran (Taste E).' },
+      ],
+      7: [
+        { text: 'Die Sphinx blickt unverwandt exakt nach Osten – dorthin, wo am Tag der Tagundnachtgleiche die Sonne über dem Horizont aufsteigt.' },
+        { text: 'Vollende die astronomische Ausrichtung der Sphinx (Taste E)!' },
+      ],
+    };
+
+    const hemiunuNodes = hemiunuBriefings[q] || [
+      { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
+      { text: `Tipp:\n${curHint}` },
+    ];
     state.openDialog({
       speaker: 'Baumeister Hemiunu',
-      nodes: [
-        { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
-        { text: `Tipp:\n${curHint}` },
-      ],
+      nodes: hemiunuNodes,
     });
   }
 
@@ -2446,7 +2641,11 @@ export class WorldScene extends Phaser.Scene {
     if (q === 7 || state.isReadyForQuiz()) {
       state.openDialog({
         speaker: 'Hafenmeister Baki – Abschluss-Prüfung',
-        nodes: ch.quiz as any,
+        nodes: [
+          { text: 'Das Getreideabkommen ist besiegelt und die Getreidebarke segelt nach Rom!' },
+          { text: 'Nun tritt vor zur großen Abschlussprüfung über den Welthandel, die Kornkammer Roms und das Ende der Pharaonenzeit.' },
+          ...(ch.quiz as any),
+        ],
         onDone: () => {
           state.quest = ch.quests.length;
           state.unlockLexicon('handelsreisen');
@@ -2486,12 +2685,41 @@ export class WorldScene extends Phaser.Scene {
     }
 
     const curHint = ch.hints[q] || ch.quests[q] || 'Erfülle deine Aufgaben am Hafen!';
+    const bakiBriefings: Record<number, Array<{ text: string }>> = {
+      1: [
+        { text: 'Ich bin Hafenmeister Baki! Der Nil ist unsere Lebensader, aber das Meer öffnet uns den Welthandel.' },
+        { text: 'Bereits Königin Hatschepsut sandte Expeditionen in das geheimnisvolle Land Punt, um aromatischen Weihrauch für die Göttertempel zu erhandeln.' },
+        { text: 'Öffne den Basar (Taste H oder Taste E am Basarstand) und erhandle seltenes <strong>Punt-Weihrauchharz</strong> gegen unser Getreide!' },
+      ],
+      2: [
+        { text: 'Ägypten hat Palmen, aber Palmenholz biegt sich und taugt nicht für seetüchtige Schiffe.' },
+        { text: 'Phönizische Seefahrer aus Byblos bringen uns die mächtigen, duftenden <strong>Zedern des Libanon</strong>. Tausche am Hafenanleger Leinen gegen Zedernholz (Taste E)!' },
+      ],
+      3: [
+        { text: 'Aus den Minen Nubiens holen Karawanen glänzendes Gold – für uns das „Fleisch der Götter“, weil es niemals rostet.' },
+        { text: 'Daraus schmieden wir das ewige Antlitz des Herrschers, wie die Goldmaske des Tutanchamun. Schmiede eine <strong>goldene Totenmaske</strong> im Handwerk (Taste C)!' },
+      ],
+      4: [
+        { text: 'Im Westen wächst eine neue Großmacht heran: Das Römische Reich!' },
+        { text: 'Rom ist eine Millionenstadt und benötigt täglich unvorstellbare Mengen Korn. Ägypten wird zur lebenswichtigen <strong>„Kornkammer Roms“</strong>!\n\nSchnüre <strong>3× versiegelte Getreidesäcke</strong> im Handwerk (Taste C).' },
+      ],
+      5: [
+        { text: 'Die königliche Frachtbarke liegt am Pier vertäut. Ihre Segel fangen den Nordwind ein, um das Korn meerabwärts zu transportieren.' },
+        { text: 'Verlade das ägyptische Getreide auf die Nilbarke (Taste E)!' },
+      ],
+      6: [
+        { text: 'Am Pier wartet Senator Cornelius, Abgesandter des römischen Senats.' },
+        { text: 'Besiegle das Getreide- und Friedensabkommen mit Rom (Taste E), um den Wohlstand beider Völker zu sichern!' },
+      ],
+    };
+
+    const bakiNodes = bakiBriefings[q] || [
+      { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
+      { text: `Tipp:\n${curHint}` },
+    ];
     state.openDialog({
       speaker: 'Hafenmeister Baki',
-      nodes: [
-        { text: `Deine aktuelle Aufgabe:\n${ch.quests[q]}` },
-        { text: `Tipp:\n${curHint}` },
-      ],
+      nodes: bakiNodes,
     });
   }
 
@@ -2646,7 +2874,10 @@ export class WorldScene extends Phaser.Scene {
       else if (q === 4) this.setCompassTargetByBuilding('speicher', 'Bauplatz Königlicher Kornspeicher');
       else if (q === 5) state.compassText = '🔨 Drücke C -> Vorratstopf brennen!';
       else if (q === 6) state.compassText = '🔨 Drücke C -> Feines Leinentuch weben!';
-      else if (q === 7) state.compassText = '🔨 Drücke C -> 2× Brot & 1× Bier herstellen!';
+      else if (q === 7) {
+        this.setCompassTargetByKind('egypt_nefermaat', 'Wesir Nefermaat (Arbeiterlohn-Kontext)');
+        state.compassText = '👑 Wesir Nefermaat: Erklärung Arbeiterlohn & Taste C (Brot & Bier)';
+      }
       else this.setCompassTargetByKind('egypt_nefermaat', 'Wesir Nefermaat');
     } else if (ch === 4) {
       if (q === 1) this.setCompassTargetByBuilding('schreiberhaus', 'Bauplatz Haus des Lebens');

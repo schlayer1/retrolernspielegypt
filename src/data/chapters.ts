@@ -457,7 +457,7 @@ export const CHAPTERS: Record<number, ChapterDef> = {
       'Errichte den runden Getreidespeicher mit Lehmziegeln am Palasthof.',
       'Forme Schlick auf der Töpferscheibe zu einem Vorratstopf (C).',
       'Webe kühles Leinentuch im Handwerk (Taste C).',
-      'Brot und Dickbier sind das feste Zahlungsmittel für die Bauarbeiter!',
+      'Sprich mit Wesir Nefermaat über den Arbeiterlohn! Brot & Dickbier sind die Währung und der Lohn der Handwerker.',
       'Sprich mit Wesir Nefermaat und entrichte die königliche Abgabe.',
     ],
     intro: [
