@@ -300,13 +300,36 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet('npc_guard', 'assets/gfx/npcs/npc_guard.png', { frameWidth: 16, frameHeight: 32 });
     this.load.spritesheet('npc_mummy', 'assets/gfx/npcs/npc_mummy.png', { frameWidth: 16, frameHeight: 32 });
 
-    // 2b. Tiere des Nils, Fackelfeuer & Ägyptische Fauna
+    // 2b. Tiere des Nils, Fackelfeuer & Ägyptische Fauna (Legacy & neue 16-Bit SNES Spritesheets)
     this.load.spritesheet('animal_cow', 'assets/gfx/cow.png', { frameWidth: 80, frameHeight: 80 });
     this.load.spritesheet('animal_goat', 'assets/gfx/goat.png', { frameWidth: 80, frameHeight: 80 });
     this.load.spritesheet('animal_chicken', 'assets/gfx/chicken.png', { frameWidth: 80, frameHeight: 80 });
     this.load.spritesheet('animal_duck', 'assets/gfx/duck.png', { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('animal_bird', 'assets/gfx/bird.png', { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('dungeon_fire', 'assets/egypt/dungeon_fire.png', { frameWidth: 32, frameHeight: 32 });
+
+    // Neue authentische 16-Bit SNES Fauna & Flora
+    this.load.spritesheet('sdv_cow', 'assets/fauna/cow.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sdv_calf', 'assets/fauna/calf.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sdv_goat', 'assets/fauna/goat.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sdv_goat_baby', 'assets/fauna/goat_baby.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sdv_chicken', 'assets/fauna/chicken.png', { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('sdv_chick', 'assets/fauna/chick.png', { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('sdv_duck', 'assets/fauna/duck.png', { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('sdv_cat_bastet', 'assets/fauna/cat_bastet.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sdv_cat_village', 'assets/fauna/cat_village.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sdv_turtle', 'assets/fauna/turtle.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sdv_ostrich', 'assets/fauna/ostrich.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sdv_ostrich_baby', 'assets/fauna/ostrich_baby.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sdv_dog_tesem', 'assets/fauna/dog_tesem.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sdv_parrot', 'assets/fauna/parrot.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sdv_critters', 'assets/fauna/critters.png', { frameWidth: 16, frameHeight: 16 });
+
+    // Flora
+    this.load.spritesheet('sdv_bushes', 'assets/flora/bushes.png', { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet('sdv_crops', 'assets/flora/crops.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('sdv_fruit_trees', 'assets/flora/fruit_trees.png', { frameWidth: 48, frameHeight: 80 });
+    this.load.spritesheet('sdv_forage', 'assets/flora/forage.png', { frameWidth: 16, frameHeight: 16 });
 
     // 3. Authentische Monumente
     this.load.image('egypt_pyramid', 'assets/egypt/Pyramid.png');
@@ -426,7 +449,7 @@ export class BootScene extends Phaser.Scene {
       });
     });
 
-    // Tier-Animationen (Nilkuh, Ziege, Dorfhuhn, Nilente & Singvogel)
+    // Tier-Animationen (Nilkuh, Ziege, Dorfhuhn, Nilente & Singvogel - Legacy)
     this.anims.create({
       key: 'idle-cow',
       frames: [{ key: 'animal_cow', frame: 0 }],
@@ -475,6 +498,134 @@ export class BootScene extends Phaser.Scene {
       frameRate: 3,
       repeat: -1,
     });
+
+    // ----------------------------------------------------
+    // Neue lebendige 16-Bit SNES-Fauna des Alten Ägypten
+    // ----------------------------------------------------
+    // Hathor-Pflugochse & Kuh (sdv_cow)
+    this.anims.create({ key: 'cow-idle', frames: [{ key: 'sdv_cow', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'cow-walk', frames: this.anims.generateFrameNumbers('sdv_cow', { start: 4, end: 7 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'cow-walk-down', frames: this.anims.generateFrameNumbers('sdv_cow', { start: 0, end: 3 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'cow-walk-right', frames: this.anims.generateFrameNumbers('sdv_cow', { start: 4, end: 7 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'cow-walk-up', frames: this.anims.generateFrameNumbers('sdv_cow', { start: 8, end: 11 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'cow-graze', frames: this.anims.generateFrameNumbers('sdv_cow', { start: 12, end: 15 }), frameRate: 4, repeat: -1 });
+
+    // Jungkalb (sdv_calf)
+    this.anims.create({ key: 'calf-idle', frames: [{ key: 'sdv_calf', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'calf-walk', frames: this.anims.generateFrameNumbers('sdv_calf', { start: 4, end: 7 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'calf-walk-down', frames: this.anims.generateFrameNumbers('sdv_calf', { start: 0, end: 3 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'calf-walk-right', frames: this.anims.generateFrameNumbers('sdv_calf', { start: 4, end: 7 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'calf-walk-up', frames: this.anims.generateFrameNumbers('sdv_calf', { start: 8, end: 11 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'calf-graze', frames: this.anims.generateFrameNumbers('sdv_calf', { start: 12, end: 15 }), frameRate: 4, repeat: -1 });
+
+    // Schilfziege (sdv_goat)
+    this.anims.create({ key: 'goat-idle', frames: [{ key: 'sdv_goat', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'goat-walk', frames: this.anims.generateFrameNumbers('sdv_goat', { start: 4, end: 7 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'goat-walk-down', frames: this.anims.generateFrameNumbers('sdv_goat', { start: 0, end: 3 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'goat-walk-right', frames: this.anims.generateFrameNumbers('sdv_goat', { start: 4, end: 7 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'goat-walk-up', frames: this.anims.generateFrameNumbers('sdv_goat', { start: 8, end: 11 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'goat-graze', frames: this.anims.generateFrameNumbers('sdv_goat', { start: 12, end: 15 }), frameRate: 4, repeat: -1 });
+
+    // Zicklein (sdv_goat_baby)
+    this.anims.create({ key: 'goat-baby-idle', frames: [{ key: 'sdv_goat_baby', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'goat-baby-walk', frames: this.anims.generateFrameNumbers('sdv_goat_baby', { start: 4, end: 7 }), frameRate: 7, repeat: -1 });
+    this.anims.create({ key: 'goat-baby-walk-down', frames: this.anims.generateFrameNumbers('sdv_goat_baby', { start: 0, end: 3 }), frameRate: 7, repeat: -1 });
+    this.anims.create({ key: 'goat-baby-walk-right', frames: this.anims.generateFrameNumbers('sdv_goat_baby', { start: 4, end: 7 }), frameRate: 7, repeat: -1 });
+    this.anims.create({ key: 'goat-baby-walk-up', frames: this.anims.generateFrameNumbers('sdv_goat_baby', { start: 8, end: 11 }), frameRate: 7, repeat: -1 });
+    this.anims.create({ key: 'goat-baby-play', frames: this.anims.generateFrameNumbers('sdv_goat_baby', { start: 12, end: 15 }), frameRate: 5, repeat: -1 });
+
+    // Ägyptisches Dorfhuhn (sdv_chicken)
+    this.anims.create({ key: 'chicken-idle', frames: [{ key: 'sdv_chicken', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'chicken-walk', frames: this.anims.generateFrameNumbers('sdv_chicken', { start: 4, end: 7 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'chicken-walk-down', frames: this.anims.generateFrameNumbers('sdv_chicken', { start: 0, end: 3 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'chicken-walk-right', frames: this.anims.generateFrameNumbers('sdv_chicken', { start: 4, end: 7 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'chicken-walk-up', frames: this.anims.generateFrameNumbers('sdv_chicken', { start: 8, end: 11 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'chicken-peck', frames: this.anims.generateFrameNumbers('sdv_chicken', { start: 12, end: 15 }), frameRate: 5, repeat: -1 });
+
+    // Hühnerküken (sdv_chick)
+    this.anims.create({ key: 'chick-idle', frames: [{ key: 'sdv_chick', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'chick-walk', frames: this.anims.generateFrameNumbers('sdv_chick', { start: 4, end: 7 }), frameRate: 7, repeat: -1 });
+    this.anims.create({ key: 'chick-walk-down', frames: this.anims.generateFrameNumbers('sdv_chick', { start: 0, end: 3 }), frameRate: 7, repeat: -1 });
+    this.anims.create({ key: 'chick-walk-right', frames: this.anims.generateFrameNumbers('sdv_chick', { start: 4, end: 7 }), frameRate: 7, repeat: -1 });
+    this.anims.create({ key: 'chick-walk-up', frames: this.anims.generateFrameNumbers('sdv_chick', { start: 8, end: 11 }), frameRate: 7, repeat: -1 });
+    this.anims.create({ key: 'chick-peck', frames: this.anims.generateFrameNumbers('sdv_chick', { start: 12, end: 15 }), frameRate: 5, repeat: -1 });
+
+    // Nil-Wildente (sdv_duck)
+    this.anims.create({ key: 'duck-idle', frames: [{ key: 'sdv_duck', frame: 16 }], frameRate: 1 });
+    this.anims.create({ key: 'duck-walk-down', frames: this.anims.generateFrameNumbers('sdv_duck', { start: 0, end: 3 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'duck-walk-right', frames: this.anims.generateFrameNumbers('sdv_duck', { start: 4, end: 7 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'duck-walk-up', frames: this.anims.generateFrameNumbers('sdv_duck', { start: 8, end: 11 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'duck-swim-down', frames: this.anims.generateFrameNumbers('sdv_duck', { start: 12, end: 15 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'duck-swim-right', frames: this.anims.generateFrameNumbers('sdv_duck', { start: 16, end: 19 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'duck-swim-up', frames: this.anims.generateFrameNumbers('sdv_duck', { start: 20, end: 23 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'duck-dive', frames: this.anims.generateFrameNumbers('sdv_duck', { start: 24, end: 27 }), frameRate: 4, repeat: -1 });
+    this.anims.create({ key: 'duck-flap', frames: this.anims.generateFrameNumbers('sdv_duck', { start: 28, end: 31 }), frameRate: 6, repeat: -1 });
+
+    // Heilige Bastet-Katze (sdv_cat_bastet)
+    this.anims.create({ key: 'cat-bastet-idle', frames: [{ key: 'sdv_cat_bastet', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'cat-bastet-walk-down', frames: this.anims.generateFrameNumbers('sdv_cat_bastet', { start: 0, end: 3 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'cat-bastet-walk-right', frames: this.anims.generateFrameNumbers('sdv_cat_bastet', { start: 4, end: 7 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'cat-bastet-walk-up', frames: this.anims.generateFrameNumbers('sdv_cat_bastet', { start: 8, end: 11 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'cat-bastet-sit', frames: this.anims.generateFrameNumbers('sdv_cat_bastet', { start: 12, end: 15 }), frameRate: 3, repeat: -1 });
+    this.anims.create({ key: 'cat-bastet-lick', frames: this.anims.generateFrameNumbers('sdv_cat_bastet', { start: 16, end: 19 }), frameRate: 4, repeat: -1 });
+    this.anims.create({ key: 'cat-bastet-sleep', frames: this.anims.generateFrameNumbers('sdv_cat_bastet', { start: 20, end: 23 }), frameRate: 2, repeat: -1 });
+
+    // Dorfkatze am Speicher (sdv_cat_village)
+    this.anims.create({ key: 'cat-village-idle', frames: [{ key: 'sdv_cat_village', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'cat-village-walk-down', frames: this.anims.generateFrameNumbers('sdv_cat_village', { start: 0, end: 3 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'cat-village-walk-right', frames: this.anims.generateFrameNumbers('sdv_cat_village', { start: 4, end: 7 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'cat-village-walk-up', frames: this.anims.generateFrameNumbers('sdv_cat_village', { start: 8, end: 11 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'cat-village-sit', frames: this.anims.generateFrameNumbers('sdv_cat_village', { start: 12, end: 15 }), frameRate: 3, repeat: -1 });
+    this.anims.create({ key: 'cat-village-lick', frames: this.anims.generateFrameNumbers('sdv_cat_village', { start: 16, end: 19 }), frameRate: 4, repeat: -1 });
+
+    // Ägyptischer Tesem-Jagdhund (sdv_dog_tesem)
+    this.anims.create({ key: 'dog-tesem-idle', frames: [{ key: 'sdv_dog_tesem', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'dog-tesem-walk-down', frames: this.anims.generateFrameNumbers('sdv_dog_tesem', { start: 0, end: 3 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'dog-tesem-walk-right', frames: this.anims.generateFrameNumbers('sdv_dog_tesem', { start: 4, end: 7 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'dog-tesem-walk-up', frames: this.anims.generateFrameNumbers('sdv_dog_tesem', { start: 8, end: 11 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'dog-tesem-sniff', frames: this.anims.generateFrameNumbers('sdv_dog_tesem', { start: 12, end: 15 }), frameRate: 4, repeat: -1 });
+    this.anims.create({ key: 'dog-tesem-sit', frames: this.anims.generateFrameNumbers('sdv_dog_tesem', { start: 16, end: 19 }), frameRate: 3, repeat: -1 });
+    this.anims.create({ key: 'dog-tesem-wag', frames: this.anims.generateFrameNumbers('sdv_dog_tesem', { start: 20, end: 23 }), frameRate: 5, repeat: -1 });
+
+    // Nil-Schildkröte (sdv_turtle)
+    this.anims.create({ key: 'turtle-idle', frames: [{ key: 'sdv_turtle', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'turtle-walk-down', frames: this.anims.generateFrameNumbers('sdv_turtle', { start: 0, end: 3 }), frameRate: 3, repeat: -1 });
+    this.anims.create({ key: 'turtle-walk-right', frames: this.anims.generateFrameNumbers('sdv_turtle', { start: 4, end: 7 }), frameRate: 3, repeat: -1 });
+    this.anims.create({ key: 'turtle-walk-up', frames: this.anims.generateFrameNumbers('sdv_turtle', { start: 8, end: 11 }), frameRate: 3, repeat: -1 });
+    this.anims.create({ key: 'turtle-swim-down', frames: this.anims.generateFrameNumbers('sdv_turtle', { start: 12, end: 15 }), frameRate: 3, repeat: -1 });
+    this.anims.create({ key: 'turtle-swim-right', frames: this.anims.generateFrameNumbers('sdv_turtle', { start: 16, end: 19 }), frameRate: 3, repeat: -1 });
+    this.anims.create({ key: 'turtle-swim-up', frames: this.anims.generateFrameNumbers('sdv_turtle', { start: 20, end: 23 }), frameRate: 3, repeat: -1 });
+    this.anims.create({ key: 'turtle-hide', frames: this.anims.generateFrameNumbers('sdv_turtle', { start: 24, end: 27 }), frameRate: 3, repeat: -1 });
+    this.anims.create({ key: 'turtle-peek', frames: this.anims.generateFrameNumbers('sdv_turtle', { start: 28, end: 31 }), frameRate: 3, repeat: -1 });
+
+    // Afrikanischer Wüstenstrauß (sdv_ostrich)
+    this.anims.create({ key: 'ostrich-idle', frames: [{ key: 'sdv_ostrich', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'ostrich-walk-down', frames: this.anims.generateFrameNumbers('sdv_ostrich', { start: 0, end: 3 }), frameRate: 7, repeat: -1 });
+    this.anims.create({ key: 'ostrich-walk-right', frames: this.anims.generateFrameNumbers('sdv_ostrich', { start: 4, end: 7 }), frameRate: 7, repeat: -1 });
+    this.anims.create({ key: 'ostrich-walk-up', frames: this.anims.generateFrameNumbers('sdv_ostrich', { start: 8, end: 11 }), frameRate: 7, repeat: -1 });
+    this.anims.create({ key: 'ostrich-peck', frames: this.anims.generateFrameNumbers('sdv_ostrich', { start: 12, end: 15 }), frameRate: 5, repeat: -1 });
+
+    // Straußenküken (sdv_ostrich_baby)
+    this.anims.create({ key: 'ostrich-baby-idle', frames: [{ key: 'sdv_ostrich_baby', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'ostrich-baby-walk-down', frames: this.anims.generateFrameNumbers('sdv_ostrich_baby', { start: 0, end: 3 }), frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'ostrich-baby-walk-right', frames: this.anims.generateFrameNumbers('sdv_ostrich_baby', { start: 4, end: 7 }), frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'ostrich-baby-walk-up', frames: this.anims.generateFrameNumbers('sdv_ostrich_baby', { start: 8, end: 11 }), frameRate: 8, repeat: -1 });
+    this.anims.create({ key: 'ostrich-baby-peck', frames: this.anims.generateFrameNumbers('sdv_ostrich_baby', { start: 12, end: 15 }), frameRate: 5, repeat: -1 });
+
+    // Punt-Papagei am Hafenbasar (sdv_parrot)
+    this.anims.create({ key: 'parrot-idle', frames: [{ key: 'sdv_parrot', frame: 4 }], frameRate: 1 });
+    this.anims.create({ key: 'parrot-hop-down', frames: this.anims.generateFrameNumbers('sdv_parrot', { start: 0, end: 3 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'parrot-hop-right', frames: this.anims.generateFrameNumbers('sdv_parrot', { start: 4, end: 7 }), frameRate: 5, repeat: -1 });
+    this.anims.create({ key: 'parrot-flap', frames: this.anims.generateFrameNumbers('sdv_parrot', { start: 8, end: 11 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'parrot-preen', frames: this.anims.generateFrameNumbers('sdv_parrot', { start: 12, end: 15 }), frameRate: 4, repeat: -1 });
+
+    // Umgebungs-Critters (sdv_critters: Schmetterlinge & Heqet-Frösche)
+    this.anims.create({ key: 'critter-butterfly-1', frames: this.anims.generateFrameNumbers('sdv_critters', { start: 128, end: 131 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'critter-butterfly-2', frames: this.anims.generateFrameNumbers('sdv_critters', { start: 132, end: 135 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'critter-butterfly-3', frames: this.anims.generateFrameNumbers('sdv_critters', { start: 136, end: 139 }), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'critter-frog-idle', frames: this.anims.generateFrameNumbers('sdv_critters', { start: 280, end: 281 }), frameRate: 2, repeat: -1 });
+    this.anims.create({ key: 'critter-frog-croak', frames: this.anims.generateFrameNumbers('sdv_critters', { start: 281, end: 283 }), frameRate: 4, repeat: -1 });
+    this.anims.create({ key: 'critter-frog-jump', frames: this.anims.generateFrameNumbers('sdv_critters', { start: 284, end: 287 }), frameRate: 8, repeat: 0 });
 
     // Animiertes Lagerfeuer & Tempel-Feuerschalen
     this.anims.create({

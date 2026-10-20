@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { sfx } from '../audio/sound';
 import { EgyptBuildingDef, EgyptItemId } from '../data/items';
 import { CROP_MS, DAY_MS, state } from '../systems/GameState';
+import { WildlifeManager } from '../world/Wildlife';
 
 const TILE = 16;
 const MAP_W = 50; // 800 px
@@ -109,21 +110,6 @@ const BUILDING_OBSTACLES: BoundingBox[] = [
   { minX: 605, maxX: 800, minY: 0, maxY: 800 },
 ];
 
-/** Begrenzung für schwimmende Nil-Enten (Land-Sperre) */
-const NILE_WATER_BOUNDS: BoundingBox = { minX: 625, maxX: 750, minY: 310, maxY: 420 };
-
-interface WanderingAnimal {
-  sprite: Phaser.GameObjects.Sprite;
-  homeX: number;
-  homeY: number;
-  vx: number;
-  vy: number;
-  timer: number;
-  walkAnim: string;
-  idleAnim: string;
-  isWaterAnimal?: boolean;
-}
-
 export class WorldScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
   private facing: 'down' | 'up' | 'left' | 'right' = 'down';
@@ -143,7 +129,7 @@ export class WorldScene extends Phaser.Scene {
   private nightOverlay!: Phaser.GameObjects.Rectangle;
   private lightGlows: LightGlow[] = [];
   private waterShimmers: Phaser.GameObjects.Rectangle[] = [];
-  private wanderingAnimals: WanderingAnimal[] = [];
+  private wildlife!: WildlifeManager;
   private saveTimer = 0;
   private sleeping = false;
   private playerLabel?: DomLabel;
@@ -157,7 +143,7 @@ export class WorldScene extends Phaser.Scene {
     this.domLabels = [];
     this.lightGlows = [];
     this.waterShimmers = [];
-    this.wanderingAnimals = [];
+    this.wildlife = new WildlifeManager(this);
     this.sleeping = false;
 
     const existingLayer = document.getElementById('world-labels');
@@ -185,6 +171,9 @@ export class WorldScene extends Phaser.Scene {
 
     // 5. Antike Relikte & Sakrale Schätze
     this.placeEgyptRelics();
+
+    // 5b. Lebendige Nil-Ökologie & Umgebungs-Critters
+    this.wildlife.spawnAmbientFauna(MAP_W * TILE, MAP_H * TILE);
 
     // 6. Spieler-Spawn
     const startX = state.playerX || 490;
@@ -258,28 +247,6 @@ export class WorldScene extends Phaser.Scene {
       n.sprite.setVisible(false);
       if (n.label) n.label.el.style.display = 'none';
     }
-  }
-
-  private isAnimalBlocked(x: number, y: number, isWater = false): boolean {
-    if (isWater) {
-      if (
-        x < NILE_WATER_BOUNDS.minX ||
-        x > NILE_WATER_BOUNDS.maxX ||
-        y < NILE_WATER_BOUNDS.minY ||
-        y > NILE_WATER_BOUNDS.maxY
-      ) {
-        return true;
-      }
-      // Holzsteg der Fischer meiden
-      if (x >= 590 && x <= 624 && y >= 340 && y <= 366) return true;
-      return false;
-    }
-    for (const b of BUILDING_OBSTACLES) {
-      if (x >= b.minX && x <= b.maxX && y >= b.minY && y <= b.maxY) {
-        return true;
-      }
-    }
-    return false;
   }
 
   // ---------------------------------------------------------------- Weltaufbau & Themenböden
@@ -880,44 +847,79 @@ export class WorldScene extends Phaser.Scene {
       kheti.sprite.anims.play('idle-kheti', true);
       kheti.label = this.addLabel(520, 157, '👩‍🌾 Bäuerin Kheti', '#86efac');
 
-      // Belebte Nil-Nutztiere (Pflugochse, Ziege & Dorfhuhn - maßstabsgerecht & animiert)
-      const ox = this.add.sprite(388, 295, 'animal_cow', 0).setScale(0.55).setDepth(295);
-      ox.anims.play('idle-cow', true);
-      this.wanderingAnimals.push({
+      // 16-Bit Nil-Nutztiere der Bauern: Hathor-Pflugochse, Jungkalb, Schilfziegen & Dorfhühner
+      const ox = this.add.sprite(380, 290, 'sdv_cow', 4).setScale(1.0).setDepth(290);
+      this.wildlife.addAnimal({
+        kind: 'cow',
         sprite: ox,
-        homeX: 388,
-        homeY: 295,
-        vx: 0,
-        vy: 0,
-        timer: 2000,
-        walkAnim: 'walk-cow',
-        idleAnim: 'idle-cow',
+        bounds: { minX: 360, maxX: 410, minY: 280, maxY: 330 },
+        speed: 14,
+        animPrefix: 'cow',
+        idleAnim: 'cow-idle',
+        walkAnim: 'cow-walk-right',
+        specialAnim: 'cow-graze',
+      });
+      this.addLabel(380, 270, '🐂 Pflugochse', '#fef08a');
+
+      const calf = this.add.sprite(395, 315, 'sdv_calf', 4).setScale(0.85).setDepth(315);
+      this.wildlife.addAnimal({
+        kind: 'calf',
+        sprite: calf,
+        bounds: { minX: 365, maxX: 410, minY: 285, maxY: 330 },
+        speed: 15,
+        animPrefix: 'calf',
+        idleAnim: 'calf-idle',
+        walkAnim: 'calf-walk-right',
+        specialAnim: 'calf-graze',
       });
 
-      const goat1 = this.add.sprite(418, 312, 'animal_goat', 0).setScale(0.38).setDepth(312);
-      goat1.anims.play('idle-goat', true);
-      this.wanderingAnimals.push({
+      const goat1 = this.add.sprite(425, 298, 'sdv_goat', 4).setScale(1.0).setDepth(298);
+      this.wildlife.addAnimal({
+        kind: 'goat',
         sprite: goat1,
-        homeX: 418,
-        homeY: 312,
-        vx: 0,
-        vy: 0,
-        timer: 1400,
-        walkAnim: 'walk-goat',
-        idleAnim: 'idle-goat',
+        bounds: { minX: 410, maxX: 450, minY: 280, maxY: 330 },
+        speed: 16,
+        animPrefix: 'goat',
+        idleAnim: 'goat-idle',
+        walkAnim: 'goat-walk-right',
+        specialAnim: 'goat-graze',
+      });
+      this.addLabel(425, 280, '🐐 Schilfziege', '#bbf7d0');
+
+      const goatBaby = this.add.sprite(438, 320, 'sdv_goat_baby', 4).setScale(0.85).setDepth(320);
+      this.wildlife.addAnimal({
+        kind: 'goat_baby',
+        sprite: goatBaby,
+        bounds: { minX: 415, maxX: 450, minY: 285, maxY: 330 },
+        speed: 15,
+        animPrefix: 'goat-baby',
+        idleAnim: 'goat-baby-idle',
+        walkAnim: 'goat-baby-walk-right',
+        specialAnim: 'goat-baby-play',
       });
 
-      const chicken1 = this.add.sprite(442, 296, 'animal_chicken', 0).setScale(0.28).setDepth(296);
-      chicken1.anims.play('idle-chicken', true);
-      this.wanderingAnimals.push({
+      const chicken1 = this.add.sprite(460, 290, 'sdv_chicken', 4).setScale(1.0).setDepth(290);
+      this.wildlife.addAnimal({
+        kind: 'chicken',
         sprite: chicken1,
-        homeX: 442,
-        homeY: 296,
-        vx: 0,
-        vy: 0,
-        timer: 1600,
-        walkAnim: 'walk-chicken',
-        idleAnim: 'idle-chicken',
+        bounds: { minX: 445, maxX: 480, minY: 280, maxY: 325 },
+        speed: 16,
+        animPrefix: 'chicken',
+        idleAnim: 'chicken-idle',
+        walkAnim: 'chicken-walk-right',
+        specialAnim: 'chicken-peck',
+      });
+
+      const chick1 = this.add.sprite(470, 305, 'sdv_chick', 4).setScale(0.85).setDepth(305);
+      this.wildlife.addAnimal({
+        kind: 'chick',
+        sprite: chick1,
+        bounds: { minX: 448, maxX: 480, minY: 282, maxY: 325 },
+        speed: 15,
+        animPrefix: 'chick',
+        idleAnim: 'chick-idle',
+        walkAnim: 'chick-walk-right',
+        specialAnim: 'chick-peck',
       });
     }
 
@@ -932,6 +934,20 @@ export class WorldScene extends Phaser.Scene {
       guard.sprite.setDepth(195);
       guard.sprite.anims.play('idle-guard', true);
       guard.label = this.addLabel(326, 170, '🛡️ Königliche Palastwache', '#fbbf24');
+
+      // Flinke Katze am königlichen Getreidespeicher (schützt die Kornkammern vor Mäusen)
+      const storageCat = this.add.sprite(412, 168, 'sdv_cat_village', 4).setScale(1.0).setDepth(168);
+      this.wildlife.addAnimal({
+        kind: 'cat_village',
+        sprite: storageCat,
+        bounds: { minX: 388, maxX: 435, minY: 155, maxY: 185 },
+        speed: 18,
+        animPrefix: 'cat-village',
+        idleAnim: 'cat-village-idle',
+        walkAnim: 'cat-village-walk-right',
+        specialAnim: 'cat-village-lick',
+      });
+      this.addLabel(412, 150, '🐈 Speicherkatze', '#fed7aa');
     }
 
     // 4. Kapitel 4+: Ober-Schreiber Ani & Einbalsamierer
@@ -945,6 +961,34 @@ export class WorldScene extends Phaser.Scene {
       mum.sprite.setDepth(362);
       mum.sprite.anims.play('idle-mummy', true);
       mum.label = this.addLabel(162, 337, '⚰️ Balsamierer des Anubis', '#cbd5e1');
+
+      // Heilige Bastet-Katze im Tempel-Innenhof
+      const bastetCat = this.add.sprite(345, 315, 'sdv_cat_bastet', 4).setScale(1.0).setDepth(315);
+      this.wildlife.addAnimal({
+        kind: 'cat_bastet',
+        sprite: bastetCat,
+        bounds: { minX: 330, maxX: 375, minY: 285, maxY: 335 },
+        speed: 15,
+        animPrefix: 'cat-bastet',
+        idleAnim: 'cat-bastet-idle',
+        walkAnim: 'cat-bastet-walk-right',
+        specialAnim: 'cat-bastet-lick',
+      });
+      this.addLabel(345, 297, '🐱 Heilige Bastet-Katze', '#fde047');
+
+      // Ägyptischer Tesem-Jagdhund (Wachhund am Tempel-Pylon)
+      const tesemDog = this.add.sprite(290, 275, 'sdv_dog_tesem', 4).setScale(1.0).setDepth(275);
+      this.wildlife.addAnimal({
+        kind: 'dog_tesem',
+        sprite: tesemDog,
+        bounds: { minX: 270, maxX: 310, minY: 260, maxY: 295 },
+        speed: 17,
+        animPrefix: 'dog-tesem',
+        idleAnim: 'dog-tesem-idle',
+        walkAnim: 'dog-tesem-walk-right',
+        specialAnim: 'dog-tesem-wag',
+      });
+      this.addLabel(290, 257, '🐕 Tesem-Jagdhund', '#fef08a');
     }
 
     // 5. Kapitel 5+: Baumeister Hemiunu
@@ -953,6 +997,32 @@ export class WorldScene extends Phaser.Scene {
       hemi.sprite.setDepth(205);
       hemi.sprite.anims.play('idle-hemiunu', true);
       hemi.label = this.addLabel(136, 180, '📐 Baumeister Hemiunu (Kap. 5)', '#fef08a', ch === 5);
+
+      // Schnelle Afrikanische Strauße auf den offenen Gizeh-Wüstendünen
+      const ostrich = this.add.sprite(90, 440, 'sdv_ostrich', 4).setScale(1.0).setDepth(440);
+      this.wildlife.addAnimal({
+        kind: 'ostrich',
+        sprite: ostrich,
+        bounds: { minX: 60, maxX: 150, minY: 410, maxY: 480 },
+        speed: 22,
+        animPrefix: 'ostrich',
+        idleAnim: 'ostrich-idle',
+        walkAnim: 'ostrich-walk-right',
+        specialAnim: 'ostrich-peck',
+      });
+      this.addLabel(90, 422, '🪶 Wüstenstrauß', '#fde68a');
+
+      const babyOstrich = this.add.sprite(120, 450, 'sdv_ostrich_baby', 4).setScale(0.85).setDepth(450);
+      this.wildlife.addAnimal({
+        kind: 'ostrich_baby',
+        sprite: babyOstrich,
+        bounds: { minX: 65, maxX: 145, minY: 415, maxY: 480 },
+        speed: 20,
+        animPrefix: 'ostrich-baby',
+        idleAnim: 'ostrich-baby-idle',
+        walkAnim: 'ostrich-baby-walk-right',
+        specialAnim: 'ostrich-baby-peck',
+      });
     }
 
     // 6. Kapitel 6+: Hafenmeister Baki, Phönizischer Holzhändler & Römischer Senator
@@ -971,6 +1041,20 @@ export class WorldScene extends Phaser.Scene {
       envoy.sprite.setDepth(512);
       envoy.sprite.anims.play('idle-guard', true);
       envoy.label = this.addLabel(524, 487, '🏛️ Senator Cornelius aus Rom (E)', '#f87171');
+
+      // Exotischer Punt-Papagei am Nilhafen-Basar
+      const puntParrot = this.add.sprite(575, 505, 'sdv_parrot', 4).setScale(1.0).setDepth(505);
+      this.wildlife.addAnimal({
+        kind: 'parrot',
+        sprite: puntParrot,
+        bounds: { minX: 565, maxX: 605, minY: 490, maxY: 535 },
+        speed: 14,
+        animPrefix: 'parrot',
+        idleAnim: 'parrot-idle',
+        walkAnim: 'parrot-hop-right',
+        specialAnim: 'parrot-flap',
+      });
+      this.addLabel(575, 487, '🦜 Punt-Papagei', '#f43f5e');
     }
 
     // Bauplätze: Nur anzeigen, wenn das Kapitel erreicht ist
@@ -1013,34 +1097,19 @@ export class WorldScene extends Phaser.Scene {
   private placeEgyptianFauna(): void {
     const ch = state.chapter;
 
-    // A. Nil-Enten (schwimmen friedlich im Flusswasser)
-    const duck1 = this.add.sprite(646, 348, 'animal_duck', 0).setScale(1.0).setDepth(348);
-    duck1.anims.play('swim-duck', true);
-    this.wanderingAnimals.push({
-      sprite: duck1,
-      homeX: 646,
-      homeY: 348,
-      vx: 0,
-      vy: 0,
-      timer: 1800,
-      walkAnim: 'swim-duck',
-      idleAnim: 'swim-duck',
-      isWaterAnimal: true,
+    // A. Nil-Schildkröte (sonnt sich auf der Sandbank am Nilufer & schwimmt im Schilfwasser)
+    const turtle = this.add.sprite(616, 360, 'sdv_turtle', 4).setScale(1.0).setDepth(360);
+    this.wildlife.addAnimal({
+      kind: 'turtle',
+      sprite: turtle,
+      bounds: { minX: 606, maxX: 645, minY: 335, maxY: 395 },
+      speed: 10,
+      animPrefix: 'turtle',
+      idleAnim: 'turtle-idle',
+      walkAnim: 'turtle-walk-right',
+      specialAnim: 'turtle-peek',
     });
-
-    const duck2 = this.add.sprite(678, 376, 'animal_duck', 0).setScale(1.0).setDepth(376);
-    duck2.anims.play('swim-duck', true);
-    this.wanderingAnimals.push({
-      sprite: duck2,
-      homeX: 678,
-      homeY: 376,
-      vx: 0,
-      vy: 0,
-      timer: 2400,
-      walkAnim: 'swim-duck',
-      idleAnim: 'swim-duck',
-      isWaterAnimal: true,
-    });
+    this.addLabel(616, 342, '🐢 Nil-Schildkröte', '#86efac');
 
     // B. Nil-Singvogel / Reihervogel (pickt am Schilfrand)
     const bird1 = this.add.sprite(525, 345, 'animal_bird', 0).setScale(1.0).setDepth(345);
@@ -1252,76 +1321,9 @@ export class WorldScene extends Phaser.Scene {
         sh.setAlpha(0.2 + 0.35 * Math.abs(Math.sin(t * 0.003 + i)));
       }
 
-      // Sanfte Bewegung der Nil-Nutztiere auf der Uferweide & Enten auf dem Nil
-      for (const a of this.wanderingAnimals) {
-        // Proximity-Pause: Wenn Spieler sehr nah (< 28px) und kein Wassertier -> Tier pausiert scheu/respektvoll
-        if (this.player && !a.isWaterAnimal) {
-          const distToPlayer = Math.hypot(this.player.x - a.sprite.x, this.player.y - a.sprite.y);
-          if (distToPlayer < 28 && (a.vx !== 0 || a.vy !== 0)) {
-            a.vx = 0;
-            a.vy = 0;
-            a.timer = 1200;
-            a.sprite.anims.play(a.idleAnim, true);
-          }
-        }
-
-        a.timer -= delta;
-        if (a.timer <= 0) {
-          if (a.vx !== 0 || a.vy !== 0) {
-            a.vx = 0;
-            a.vy = 0;
-            a.timer = 2200 + Math.random() * 2000;
-            a.sprite.anims.play(a.idleAnim, true);
-          } else {
-            const dx = a.homeX - a.sprite.x;
-            const dy = a.homeY - a.sprite.y;
-            const distFromHome = Math.hypot(dx, dy);
-
-            // Bis zu 5 Versuche für einen freien Weg ohne Hinderniskollision
-            const preferredAngle = distFromHome > 24 ? Math.atan2(dy, dx) : Math.random() * Math.PI * 2;
-            let chosenAngle = preferredAngle;
-            let valid = false;
-
-            for (let attempt = 0; attempt < 5; attempt++) {
-              const testAngle = attempt === 0 ? preferredAngle : Math.random() * Math.PI * 2;
-              const testX = a.sprite.x + Math.cos(testAngle) * 16;
-              const testY = a.sprite.y + Math.sin(testAngle) * 16;
-              if (!this.isAnimalBlocked(testX, testY, a.isWaterAnimal)) {
-                chosenAngle = testAngle;
-                valid = true;
-                break;
-              }
-            }
-
-            if (valid || !this.isAnimalBlocked(a.sprite.x + Math.cos(chosenAngle) * 8, a.sprite.y + Math.sin(chosenAngle) * 8, a.isWaterAnimal)) {
-              const speed = 9 + Math.random() * 3;
-              a.vx = Math.cos(chosenAngle) * speed;
-              a.vy = Math.sin(chosenAngle) * speed;
-              a.timer = 1400 + Math.random() * 1200;
-              a.sprite.setFlipX(a.vx < 0);
-              a.sprite.anims.play(a.walkAnim, true);
-            } else {
-              // Eingekeilt oder am Uferrand -> kurz rasten und umsehen
-              a.timer = 1200 + Math.random() * 800;
-              a.sprite.anims.play(a.idleAnim, true);
-            }
-          }
-        }
-
-        const nextX = a.sprite.x + (a.vx * delta) / 1000;
-        const nextY = a.sprite.y + (a.vy * delta) / 1000;
-
-        if (!this.isAnimalBlocked(nextX, nextY, a.isWaterAnimal)) {
-          a.sprite.x = nextX;
-          a.sprite.y = nextY;
-          a.sprite.setDepth(a.sprite.y);
-        } else {
-          // Hindernis getroffen -> Richtung umkehren und Idle aktivieren
-          a.vx = -a.vx;
-          a.vy = -a.vy;
-          a.sprite.anims.play(a.idleAnim, true);
-          a.timer = 1500;
-        }
+      // Lebendige Nil-Ökologie & wandernde Fauna
+      if (!state.modal && !this.sleeping && this.player) {
+        this.wildlife.update(delta, this.player.x, this.player.y);
       }
     }
 
