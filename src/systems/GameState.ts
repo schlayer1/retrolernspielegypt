@@ -106,6 +106,8 @@ class GameState extends Phaser.Events.EventEmitter {
   daysSurvived = 1;
   relicsFound: string[] = [];
   relicQuizAnswered: string[] = [];
+  storyFlags: Record<string, boolean> = {};
+  dilemmaSummary: string = '';
 
   playerX = 440;
   playerY = 320;

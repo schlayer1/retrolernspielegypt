@@ -76,6 +76,11 @@ class SoundFX {
     this.tone(220, 0.08, 'triangle', 0.08, 0);
     this.tone(160, 0.14, 'triangle', 0.07, 0.06);
   }
+
+  pet(): void {
+    this.tone(587.33, 0.08, 'sine', 0.09, 0);
+    this.tone(880, 0.14, 'sine', 0.1, 0.08);
+  }
 }
 
 export const sfx = new SoundFX();

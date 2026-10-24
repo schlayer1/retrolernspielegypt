@@ -5,3 +5,6 @@ dist-ssr
 .DS_Store
 /Assets/
 /scratch/
+raw_assets/
+assets_raw/
+downloaded assets/

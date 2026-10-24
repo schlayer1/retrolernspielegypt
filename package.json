@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "tsc --noEmit && vite build",
+    "test:layout": "node scripts/check_layout_overlaps.cjs",
+    "build": "node scripts/check_layout_overlaps.cjs && tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {

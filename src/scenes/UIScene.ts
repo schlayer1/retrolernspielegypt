@@ -22,6 +22,9 @@ import { DialogSpec, EGYPT_ROLES, PlayerRole, state } from '../systems/GameState
 import { PlayerGender } from '../systems/SaveManager';
 import { TouchControls } from '../ui/TouchControls';
 import { EGYPT_RELICS, RelicDef } from '../data/relics';
+import { PrintSheetManager } from '../ui/PrintSheet';
+import { DilemmaModal } from '../ui/DilemmaModal';
+import { EGYPT_DILEMMAS } from '../data/dilemmas';
 
 function escapeHtml(s: string): string {
   return s
@@ -65,7 +68,8 @@ type ActivePanel =
   | 'trade'
   | 'lexicon'
   | 'timeline'
-  | 'cert';
+  | 'cert'
+  | 'dilemma';
 
 export class UIScene extends Phaser.Scene {
   private root!: HTMLElement;
@@ -93,6 +97,7 @@ export class UIScene extends Phaser.Scene {
   private modalTitleEl!: HTMLElement;
   private modalBodyEl!: HTMLElement;
   private modalFooterEl!: HTMLElement;
+  private dilemmaModal = new DilemmaModal();
 
   private activePanel: ActivePanel = 'none';
   private currentRelic: RelicDef | null = null;
@@ -184,6 +189,7 @@ export class UIScene extends Phaser.Scene {
             <button class="retro-btn" data-act="lexicon"><span class="key-badge">L</span> Lexikon</button>
             <button class="retro-btn" data-act="timeline"><span class="key-badge">Z</span> Zeitstrahl</button>
             <button class="retro-btn" data-act="cert"><span class="key-badge">U</span> Urkunde</button>
+            <button class="retro-btn" data-act="dilemma" style="border-color:#ca8a04;"><span class="key-badge">R</span> ⚖️ Rat</button>
           </div>
         </div>
       </div>
@@ -359,6 +365,10 @@ export class UIScene extends Phaser.Scene {
       }
       if (e.key === 'u' || e.key === 'U') {
         this.togglePanel('cert');
+        return;
+      }
+      if (e.key === 'r' || e.key === 'R') {
+        this.togglePanel('dilemma');
         return;
       }
       if (e.key >= '1' && e.key <= '9') {
@@ -562,6 +572,9 @@ export class UIScene extends Phaser.Scene {
         break;
       case 'cert':
         this.openCertificate();
+        break;
+      case 'dilemma':
+        this.openDilemma();
         break;
     }
   }
@@ -1033,10 +1046,15 @@ export class UIScene extends Phaser.Scene {
     this.modalFooterEl.innerHTML = `
       <button class="retro-btn" id="pause-startscreen-btn">🏠 Zum Startbildschirm</button>
       <button class="retro-btn" id="pause-chapter-btn">🗺️ Epoche wechseln</button>
+      <button class="retro-btn" id="pause-print-btn" style="background:#047857;color:#fff;border-color:#065f46;font-weight:800;">🖨️ Hefterblatt drucken (A4)</button>
       <button class="retro-btn btn-primary" id="pause-resume-btn" style="background:#22c55e;color:#052e16;font-size:15px;padding:8px 18px;font-weight:900;">
         ▶️ Weiter spielen (P)
       </button>
     `;
+
+    this.modalFooterEl.querySelector('#pause-print-btn')?.addEventListener('click', () => {
+      this.triggerHefterPrint();
+    });
 
     this.modalBodyEl.querySelector('#pause-copy-code')?.addEventListener('click', () => {
       navigator.clipboard?.writeText(shortCode);
@@ -1535,12 +1553,50 @@ export class UIScene extends Phaser.Scene {
     `;
 
     this.modalFooterEl.innerHTML = `
-      <button class="retro-btn" onclick="window.print()">🖨️ Urkunde drucken</button>
+      <button class="retro-btn" id="btn-cert-print" style="background:#047857;color:#fff;border-color:#065f46;font-weight:800;">🖨️ Hefterblatt drucken (A4)</button>
       <button class="retro-btn btn-primary" id="btn-cert-done">Schließen</button>
     `;
 
+    this.modalFooterEl.querySelector('#btn-cert-print')?.addEventListener('click', () => {
+      this.triggerHefterPrint();
+    });
+
     this.modalFooterEl.querySelector('#btn-cert-done')!.addEventListener('click', () => {
       this.closeModal();
+    });
+  }
+
+  public triggerHefterPrint(): void {
+    const relicsData = Object.values(EGYPT_RELICS).map((r: RelicDef) => ({
+      title: r.title,
+      note: r.explanation || r.lore || 'Bedeutendes archäologisches Relikt der altägyptischen Hochkultur.'
+    }));
+    const keyTerms = Object.entries(LEXICON).slice(0, 3).map(([_, v]) => ({
+      term: v.title,
+      definition: v.text.slice(0, 160) + '...'
+    }));
+    PrintSheetManager.triggerPrint({
+      schoolName: 'Staatliche Regelschule Heimbürgeschule Kahla',
+      epochTitle: 'Altes Ägypten: Kemet – Das Geschenk des Nils',
+      playerName: state.playerName,
+      hefterCode: state.exportCode(),
+      rankTitle: `${state.roleSpecialistTitle()} (${state.relicsFound.length}/5 Relikte geborgen)`,
+      relics: relicsData,
+      dilemmaSummary: state.dilemmaSummary || undefined,
+      keyTerms
+    });
+  }
+
+  public openDilemma(): void {
+    const d = EGYPT_DILEMMAS[0];
+    if (!d) return;
+    this.dilemmaModal.open(d, (opt) => {
+      state.storyFlags[opt.storyFlag] = true;
+      state.dilemmaSummary = `${d.conflictTitle}: ${opt.title} – ${opt.argumentText}`;
+      for (const [k, v] of Object.entries(opt.rewards)) {
+        state.add(k, v);
+      }
+      this.toast(`⚖️ Schiedsspruch ratifiziert: ${opt.title}`);
     });
   }
 }

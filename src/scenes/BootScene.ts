@@ -297,8 +297,9 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet('npc_ani', 'assets/gfx/npcs/npc_ani.png', { frameWidth: 16, frameHeight: 32 });
     this.load.spritesheet('npc_hemiunu', 'assets/gfx/npcs/npc_hemiunu.png', { frameWidth: 16, frameHeight: 32 });
     this.load.spritesheet('npc_baki', 'assets/gfx/npcs/npc_baki.png', { frameWidth: 16, frameHeight: 32 });
-    this.load.spritesheet('npc_guard', 'assets/gfx/npcs/npc_guard.png', { frameWidth: 16, frameHeight: 32 });
-    this.load.spritesheet('npc_mummy', 'assets/gfx/npcs/npc_mummy.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('npc_enki', 'assets/gfx/npcs/npc_enki.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('npc_guard', 'assets/gfx/npcs/npc_guard.png', { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet('npc_mummy', 'assets/gfx/npcs/npc_mummy.png', { frameWidth: 16, frameHeight: 16 });
 
     // 2b. Tiere des Nils, Fackelfeuer & Ägyptische Fauna (Legacy & neue 16-Bit SNES Spritesheets)
     this.load.spritesheet('animal_cow', 'assets/gfx/cow.png', { frameWidth: 80, frameHeight: 80 });
@@ -435,7 +436,7 @@ export class BootScene extends Phaser.Scene {
     });
 
     // NPC-Animationen (sanftes Atmen / Umsehen)
-    const npcIds = ['senbi', 'ameni', 'kheti', 'nefermaat', 'ani', 'hemiunu', 'baki', 'guard', 'mummy'];
+    const npcIds = ['senbi', 'ameni', 'kheti', 'nefermaat', 'ani', 'hemiunu', 'baki', 'enki', 'guard', 'mummy'];
     npcIds.forEach((id) => {
       this.anims.create({
         key: `idle-${id}`,

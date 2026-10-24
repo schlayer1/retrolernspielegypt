@@ -1,8 +1,11 @@
 import Phaser from 'phaser';
 import { sfx } from '../audio/sound';
 import { EgyptBuildingDef, EgyptItemId } from '../data/items';
+import { CHAPTERS } from '../data/chapters';
 import { CROP_MS, DAY_MS, state } from '../systems/GameState';
 import { WildlifeManager } from '../world/Wildlife';
+import { ChapterBanner } from '../ui/ChapterBanner';
+import { CompanionManager } from '../world/Companion';
 
 const TILE = 16;
 const MAP_W = 50; // 800 px
@@ -130,6 +133,8 @@ export class WorldScene extends Phaser.Scene {
   private lightGlows: LightGlow[] = [];
   private waterShimmers: Phaser.GameObjects.Rectangle[] = [];
   private wildlife!: WildlifeManager;
+  private banner!: ChapterBanner;
+  private companion!: CompanionManager;
   private saveTimer = 0;
   private sleeping = false;
   private playerLabel?: DomLabel;
@@ -144,6 +149,18 @@ export class WorldScene extends Phaser.Scene {
     this.lightGlows = [];
     this.waterShimmers = [];
     this.wildlife = new WildlifeManager(this);
+    this.banner = new ChapterBanner();
+    const saved = state.saves.load();
+    if (saved) state.loadFrom(saved);
+
+    const chDef = CHAPTERS[state.chapter] || CHAPTERS[1];
+    if (chDef) {
+      this.banner.show({
+        chapterNumber: state.chapter,
+        title: chDef.title,
+        subtitle: `${chDef.period} · Mentor: ${chDef.mentor}`
+      });
+    }
     this.sleeping = false;
 
     const existingLayer = document.getElementById('world-labels');
@@ -151,9 +168,6 @@ export class WorldScene extends Phaser.Scene {
     this.labelLayer.id = 'world-labels';
     if (!existingLayer) document.body.appendChild(this.labelLayer);
     this.labelLayer.innerHTML = '';
-
-    const saved = state.saves.load();
-    if (saved) state.loadFrom(saved);
 
     this.obstacles = this.physics.add.staticGroup();
 
@@ -186,6 +200,17 @@ export class WorldScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE);
     this.physics.add.collider(this.player, this.obstacles);
     this.playerLabel = this.addLabel(startX, startY - 22, state.playerName, '#fde047', true);
+
+    this.companion = new CompanionManager(this, {
+      key: 'sdv_dog_tesem',
+      animPrefix: 'dog-tesem',
+      name: 'Anubis',
+      historicalBreed: 'Altägyptischer Tesem-Windhund',
+      unlockedChapter: 1
+    });
+    if (state.chapter >= 1) {
+      this.companion.unlock(startX - 24, startY);
+    }
 
     this.cameras.main.setBounds(0, 0, MAP_W * TILE, MAP_H * TILE);
     this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
@@ -480,79 +505,78 @@ export class WorldScene extends Phaser.Scene {
     // =========================================================================
     // 1. KAPITEL 1+: FISCHERDORF AM NILUFER (Senbi)
     // =========================================================================
-    this.placeProp(490, 290, 'desert_houses', 'hut_senbi', {
-      hitW: 36,
-      hitH: 14,
-      hitOffsetY: 14,
+    this.placeProp(488, 276, 'desert_houses', 'hut_senbi', {
+      scale: 1.75,
+      hitW: 64,
+      hitH: 22,
+      hitOffsetY: 24,
     });
-    this.addLabel(490, 260, '🛖 Fischer Senbis Hütte', '#ffe9b0');
+    this.addLabel(488, 232, '🛖 Fischer Senbis Hütte', '#ffe9b0');
 
     // Fisch-Trockengestell & Weidenkörbe am Fischerlager
-    this.placeProp(528, 292, 'port_tiles', 'drying_fish_rack', {
+    this.placeProp(554, 316, 'port_tiles', 'drying_fish_rack', {
       scale: 0.5,
       hitW: 28,
       hitH: 10,
       hitOffsetY: 12,
     });
-    this.placeProp(462, 304, 'port_tiles', 'fish_baskets_group', { scale: 0.55 });
+    this.placeProp(436, 316, 'port_tiles', 'fish_baskets_group', { scale: 0.40 });
 
     // Animiertes Lagerfeuer zum Fischbraten mit warmem Lichtkegel
-    const campGlow = this.add.circle(445, 345, 30, 0xf97316, 0.22).setDepth(343);
+    const campGlow = this.add.circle(445, 348, 30, 0xf97316, 0.22).setDepth(346);
     this.lightGlows.push({ circle: campGlow, baseAlpha: 0.22, phase: 1.2 });
-    const fireNode = this.addNode('egypt_campfire', 'objects', 'fire0', 445, 345);
+    const fireNode = this.addNode('egypt_campfire', 'objects', 'fire0', 445, 348);
     fireNode.sprite.anims.play('fire', true);
-    fireNode.sprite.setDepth(345);
-    fireNode.label = this.addLabel(445, 325, '🔥 Lagerfeuer (Fisch braten)', '#f97316');
+    fireNode.sprite.setDepth(348);
+    fireNode.label = this.addLabel(445, 326, '🔥 Lagerfeuer (Fisch braten)', '#f97316');
 
     // Echter 16-Bit-Fischgrund mit geflochtener Reuse am Holzsteg
-    const fishSpot = this.addNode('egypt_fish_spot', 'port_tiles', 'fish_trap_wicker', 606, 353);
+    const fishSpot = this.addNode('egypt_fish_spot', 'port_tiles', 'fish_trap_wicker', 602, 348);
     fishSpot.sprite.setScale(0.6);
-    fishSpot.sprite.setDepth(354);
-    fishSpot.label = this.addLabel(606, 332, '🎣 Nilbarsch-Fischgrund (E)', '#38bdf8');
+    fishSpot.sprite.setDepth(349);
+    fishSpot.label = this.addLabel(602, 326, '🎣 Nilbarsch-Fischgrund (E)', '#38bdf8');
 
     // Authentisches 16-Bit-Nil-Segelboot (Feluke) am Steg
-    this.placeProp(636, 386, 'city_b01', 'nile_felucca', {
+    this.placeProp(652, 396, 'city_b01', 'nile_felucca', {
       scale: 0.68,
       hitW: 36,
       hitH: 14,
       hitOffsetY: 12,
     });
-    this.addLabel(636, 356, '⛵ Nil-Feluke', '#93c5fd');
+    this.addLabel(652, 366, '⛵ Nil-Feluke', '#93c5fd');
 
     // =========================================================================
     // 2. KAPITEL 2+: NILSCHWEMME, NILOMETER & OASE (Ameni)
     // =========================================================================
     if (state.chapter >= 2) {
-      const nilo = this.addNode('egypt_nilometer', 'city_b02', 'stele_nilometer', 582, 274);
+      const nilo = this.addNode('egypt_nilometer', 'city_b02', 'stele_nilometer', 588, 276);
       nilo.sprite.setScale(0.75);
-      nilo.sprite.setDepth(274);
-      nilo.label = this.addLabel(582, 248, '📏 Antikes Nilometer (E)', '#67e8f9');
+      nilo.sprite.setDepth(276);
+      nilo.label = this.addLabel(588, 250, '📏 Antikes Nilometer (E)', '#67e8f9');
 
       // Erntekörbe, Kornsäcke, Weizengarben & Wasseramphoren am Feldrand
-      this.placeProp(402, 224, 'city_b04', 'wheat_sheaf', { scale: 0.65 });
-      this.placeProp(402, 246, 'city_b04', 'grain_basket', { scale: 0.65 });
-      this.placeProp(532, 222, 'city_b02', 'amphora_red', { scale: 0.6 });
-      this.placeProp(532, 256, 'city_b02', 'water_basin_square', { scale: 0.6 });
+      this.placeProp(396, 232, 'city_b04', 'wheat_sheaf', { scale: 0.42 });
+      this.placeProp(396, 254, 'city_b04', 'grain_basket', { scale: 0.38 });
+      this.placeProp(548, 198, 'city_b02', 'amphora_red', { scale: 0.38 });
+      this.placeProp(494, 192, 'city_b02', 'water_basin_square', { scale: 0.48 });
 
       // Hochdetaillierte Dorf- und Acker-Props (aus Steinzeit-Adaption)
-      this.placeProp(404, 276, 'prop_haystack', undefined, { scale: 0.65, hitW: 22, hitH: 12, hitOffsetY: 8 });
-      this.placeProp(468, 280, 'prop_water_trough', undefined, { scale: 0.6, hitW: 20, hitH: 10, hitOffsetY: 6 });
-      this.placeProp(538, 278, 'prop_pots_group', undefined, { scale: 0.6, hitW: 18, hitH: 10, hitOffsetY: 6 });
-      this.placeProp(566, 324, 'prop_clay_pile', undefined, { scale: 0.6, hitW: 20, hitH: 10, hitOffsetY: 6 });
+      this.placeProp(402, 282, 'prop_haystack', undefined, { scale: 0.65, hitW: 22, hitH: 12, hitOffsetY: 8 });
+      this.placeProp(432, 278, 'prop_water_trough', undefined, { scale: 0.6, hitW: 20, hitH: 10, hitOffsetY: 6 });
+      this.placeProp(542, 272, 'prop_pots_group', undefined, { scale: 0.6, hitW: 18, hitH: 10, hitOffsetY: 6 });
+      this.placeProp(566, 344, 'prop_clay_pile', undefined, { scale: 0.6, hitW: 20, hitH: 10, hitOffsetY: 6 });
     }
 
-    // Echte 16-Bit-Dattelpalmen (mit schlanker Stamm-Fußkollision)
+    // Echte 16-Bit-Dattelpalmen (mit schlanker Stamm-Fußkollision & Ernte-Interaktion)
     const palmPositions = [
-      [390, 190],
-      [440, 140],
-      [430, 420],
-      [550, 210],
-      [540, 445],
-      [380, 490],
+      [446, 122],
       [500, 120],
-      [360, 265],
-      [185, 455],
-      [235, 470],
+      [548, 148],
+      [356, 302],
+      [434, 382],
+      [358, 476],
+      [185, 475],
+      [242, 488],
     ];
     for (const [px, py] of palmPositions) {
       this.placeProp(px, py, 'desert_tileset', 'palm_tree', {
@@ -563,14 +587,15 @@ export class WorldScene extends Phaser.Scene {
       });
       const palmNode = this.addNode('egypt_palm', 'desert_tileset', 'palm_tree', px, py + 18);
       palmNode.sprite.setVisible(false);
+      palmNode.label = this.addLabel(px, py - 10, '🌴 Dattelpalme (E)', '#fde047');
     }
 
     // Wüstensteine & Felsblöcke (mit kompakter Fuß-Kollision)
     const rockClusters = [
-      [80, 260],
+      [74, 268],
       [65, 360],
-      [110, 380],
-      [280, 440],
+      [82, 392],
+      [274, 462],
       [150, 510],
     ];
     for (const [rx, ry] of rockClusters) {
@@ -584,9 +609,9 @@ export class WorldScene extends Phaser.Scene {
     // Kakteen & Wüstensträucher
     const desertPlants = [
       [55, 310],
-      [135, 435],
-      [95, 465],
-      [310, 115],
+      [88, 442],
+      [95, 485],
+      [296, 48],
       [305, 525],
     ];
     for (const [px, py] of desertPlants) {
@@ -602,32 +627,32 @@ export class WorldScene extends Phaser.Scene {
     // =========================================================================
     if (state.chapter >= 3) {
       // Palast-Säulenkolonnade & Pharaonenthron im Norden des Hofes
-      this.placeProp(360, 132, 'city_b01', 'palace_colonnade', {
-        scale: 0.72,
-        hitW: 58,
-        hitH: 18,
-        hitOffsetY: 16,
+      this.placeProp(356, 102, 'city_b01', 'palace_colonnade', {
+        scale: 0.92,
+        hitW: 72,
+        hitH: 22,
+        hitOffsetY: 20,
       });
-      this.placeProp(322, 165, 'egypt_pillar', undefined, {
+      this.placeProp(298, 156, 'egypt_pillar', undefined, {
         scale: 0.5,
         hitW: 12,
         hitH: 10,
         hitOffsetY: 20,
       });
-      this.placeProp(398, 165, 'egypt_pillar', undefined, {
+      this.placeProp(414, 156, 'egypt_pillar', undefined, {
         scale: 0.5,
         hitW: 12,
         hitH: 10,
         hitOffsetY: 20,
       });
-      this.placeProp(360, 160, 'city_b01', 'throne_gold', { scale: 0.65 });
-      this.placeProp(306, 195, 'city_b01', 'statue_lion_l', { scale: 0.65 });
-      this.placeProp(412, 195, 'city_b01', 'statue_lion_r', { scale: 0.65 });
-      this.addTorchWithGlow(336, 168, 0.65);
-      this.addTorchWithGlow(384, 168, 0.65);
-      this.placeProp(386, 215, 'prop_pots_group', undefined, { scale: 0.65, hitW: 18, hitH: 10, hitOffsetY: 6 });
-      this.placeProp(308, 225, 'prop_wood_stack', undefined, { scale: 0.65, hitW: 20, hitH: 10, hitOffsetY: 6 });
-      this.addLabel(360, 108, '🏛️ Königlicher Hof des Wesirs', '#f59e0b');
+      this.placeProp(356, 138, 'city_b01', 'throne_gold', { scale: 0.65 });
+      this.placeProp(268, 198, 'city_b01', 'statue_lion_l', { scale: 0.65 });
+      this.placeProp(422, 198, 'city_b01', 'statue_lion_r', { scale: 0.65 });
+      this.addTorchWithGlow(332, 162, 0.65);
+      this.addTorchWithGlow(380, 162, 0.65);
+      this.placeProp(368, 218, 'prop_pots_group', undefined, { scale: 0.65, hitW: 18, hitH: 10, hitOffsetY: 6 });
+      this.placeProp(272, 224, 'prop_wood_stack', undefined, { scale: 0.65, hitW: 20, hitH: 10, hitOffsetY: 6 });
+      this.addLabel(356, 70, '🏛️ Königlicher Hof des Wesirs', '#f59e0b');
     }
 
     // =========================================================================
@@ -635,27 +660,27 @@ export class WorldScene extends Phaser.Scene {
     // =========================================================================
     if (state.chapter >= 4) {
       // Großer Tempel-Pylon mit Hieroglyphen-Inschriften
-      this.placeProp(235, 285, 'city_b01', 'temple_ornate', {
-        scale: 0.75,
-        hitW: 60,
-        hitH: 20,
-        hitOffsetY: 18,
+      this.placeProp(248, 276, 'city_b01', 'temple_ornate', {
+        scale: 0.95,
+        hitW: 76,
+        hitH: 24,
+        hitOffsetY: 22,
       });
-      this.addLabel(235, 255, '📜 Heiliger Tempel & Hieroglyphenwand', '#a78bfa');
+      this.addLabel(248, 238, '📜 Heiliger Tempel & Hieroglyphenwand', '#a78bfa');
 
       // Götterstatuen (Anubis & Thot), Opfertisch, Kanopenkrüge & Gold-Sarkophag
-      this.placeProp(200, 312, 'city_b01', 'statue_thoth', { scale: 0.72 });
-      this.placeProp(270, 312, 'city_b01', 'statue_anubis', { scale: 0.72 });
-      this.placeProp(235, 318, 'city_b01', 'table_offering', { scale: 0.65 });
-      this.placeProp(158, 355, 'city_b01', 'canopic_falcon', { scale: 0.62 });
-      this.placeProp(218, 355, 'city_b01', 'canopic_jackal', { scale: 0.62 });
-      this.addTorchWithGlow(208, 298, 0.65);
-      this.addTorchWithGlow(262, 298, 0.65);
+      this.placeProp(186, 336, 'city_b01', 'statue_thoth', { scale: 0.72 });
+      this.placeProp(310, 336, 'city_b01', 'statue_anubis', { scale: 0.72 });
+      this.placeProp(248, 338, 'city_b01', 'table_offering', { scale: 0.58 });
+      this.placeProp(134, 350, 'city_b01', 'canopic_falcon', { scale: 0.38 });
+      this.placeProp(134, 372, 'city_b01', 'canopic_jackal', { scale: 0.38 });
+      this.addTorchWithGlow(216, 298, 0.65);
+      this.addTorchWithGlow(280, 298, 0.65);
 
-      const sarcNode = this.addNode('egypt_sarcophagus', 'city_b01', 'sarcophagus_gold', 155, 390);
-      sarcNode.sprite.setScale(0.78);
-      sarcNode.sprite.setDepth(390);
-      sarcNode.label = this.addLabel(155, 364, '⚱️ Königlicher Sarkophag (E)', '#c084fc');
+      const sarcNode = this.addNode('egypt_sarcophagus', 'city_b01', 'sarcophagus_gold', 134, 416);
+      sarcNode.sprite.setScale(0.75);
+      sarcNode.sprite.setDepth(416);
+      sarcNode.label = this.addLabel(134, 390, '⚱️ Königlicher Sarkophag (E)', '#c084fc');
     }
 
     // =========================================================================
@@ -663,36 +688,36 @@ export class WorldScene extends Phaser.Scene {
     // =========================================================================
     if (state.chapter >= 5) {
       // Stufenpyramide im westlichen Hintergrund + Große Cheops-Pyramide
-      this.placeProp(48, 62, 'city_b01', 'pyramid_step', {
-        scale: 0.62,
-        hitW: 44,
-        hitH: 18,
+      this.placeProp(36, 54, 'city_b01', 'pyramid_step', {
+        scale: 0.48,
+        hitW: 38,
+        hitH: 14,
         hitOffsetY: 12,
       });
 
-      this.placeProp(116, 78, 'egypt_pyramid', undefined, {
-        scale: 0.62,
-        hitW: 88,
-        hitH: 28,
-        hitOffsetY: 22,
+      this.placeProp(118, 66, 'egypt_pyramid', undefined, {
+        scale: 0.52,
+        hitW: 78,
+        hitH: 24,
+        hitOffsetY: 20,
       });
-      this.addLabel(116, 32, '🔺 Große Pyramide von Gizeh (E)', '#fef08a');
-      const pyrNode = this.addNode('egypt_pyramid', 'desert_tileset', 'stone_flat', 116, 108);
+      this.addLabel(116, 26, '🔺 Große Pyramide von Gizeh (E)', '#fef08a');
+      const pyrNode = this.addNode('egypt_pyramid', 'desert_tileset', 'stone_flat', 116, 98);
       pyrNode.sprite.setVisible(false);
 
       // Die Große Sphinx von Gizeh (mit exakter Fuß-Hitbox)
-      this.placeProp(195, 255, 'egypt_sphinx', undefined, {
-        scale: 0.48,
-        hitW: 68,
-        hitH: 22,
-        hitOffsetY: 18,
+      this.placeProp(162, 226, 'egypt_sphinx', undefined, {
+        scale: 0.38,
+        hitW: 56,
+        hitH: 18,
+        hitOffsetY: 16,
       });
-      this.addLabel(195, 218, '🦁 Große Sphinx von Gizeh (E)', '#fef08a');
-      const sphNode = this.addNode('egypt_sphinx', 'desert_tileset', 'stone_flat', 195, 266);
+      this.addLabel(162, 194, '🦁 Große Sphinx von Gizeh (E)', '#fef08a');
+      const sphNode = this.addNode('egypt_sphinx', 'desert_tileset', 'stone_flat', 162, 236);
       sphNode.sprite.setVisible(false);
 
       // 16-Bit-Sonnen-Obelisken
-      this.placeProp(175, 92, 'city_b01', 'obelisk_tall_1', {
+      this.placeProp(188, 72, 'city_b01', 'obelisk_tall_1', {
         scale: 0.68,
         hitW: 16,
         hitH: 12,
@@ -700,29 +725,29 @@ export class WorldScene extends Phaser.Scene {
       });
 
       // Tura-Kalksteinbrüche mit behauenen Quadern & Spitzhacke
-      const q1 = this.addNode('egypt_quarry', 'city_b04', 'limestone_blocks', 66, 142);
-      q1.sprite.setScale(0.78);
-      q1.sprite.setDepth(142);
-      q1.label = this.addLabel(66, 118, '⛏️ Tura-Kalksteinbruch (E)', '#fde047');
-      this.placeProp(46, 148, 'city_b02', 'tool_pickaxe', { scale: 0.55 });
+      const q1 = this.addNode('egypt_quarry', 'city_b04', 'limestone_blocks', 64, 134);
+      q1.sprite.setScale(0.75);
+      q1.sprite.setDepth(134);
+      q1.label = this.addLabel(64, 110, '⛏️ Tura-Kalksteinbruch (E)', '#fde047');
+      this.placeProp(36, 134, 'city_b02', 'tool_pickaxe', { scale: 0.38 });
 
-      const q2 = this.addNode('egypt_quarry', 'city_b02', 'stone_blocks_pile', 60, 198);
-      q2.sprite.setScale(0.78);
-      q2.sprite.setDepth(198);
-      q2.label = this.addLabel(60, 174, '⛏️ Tura-Kalksteinbruch (E)', '#fde047');
+      const q2 = this.addNode('egypt_quarry', 'city_b02', 'stone_blocks_pile', 54, 186);
+      q2.sprite.setScale(0.75);
+      q2.sprite.setDepth(186);
+      q2.label = this.addLabel(54, 162, '⛏️ Tura-Kalksteinbruch (E)', '#fde047');
 
       // Gestapeltes Bauholz & Rollbalken (echte Holzstämme statt Palme!)
-      const t1 = this.addNode('egypt_timber', 'city_b04', 'timber_logs', 92, 224);
-      t1.sprite.setScale(0.8);
-      t1.sprite.setDepth(224);
-      t1.label = this.addLabel(92, 200, '🪓 Bauholz & Rollbalken (E)', '#b45309');
+      const t1 = this.addNode('egypt_timber', 'city_b04', 'timber_logs', 86, 214);
+      t1.sprite.setScale(0.75);
+      t1.sprite.setDepth(214);
+      t1.label = this.addLabel(86, 190, '🪓 Bauholz & Rollbalken (E)', '#b45309');
 
       // Baustellenrampe mit Transportschlitten auf der Lehmbahn
-      const ramp = this.addNode('egypt_sledge_ramp', 'city_b02', 'cargo_wagon_full', 116, 168);
-      ramp.sprite.setScale(0.75);
-      ramp.sprite.setDepth(168);
-      ramp.label = this.addLabel(116, 144, '🪵 Baustellenrampe & Schlitten (E)', '#60a5fa');
-      this.placeProp(96, 250, 'prop_wood_stack', undefined, { scale: 0.7, hitW: 22, hitH: 12, hitOffsetY: 8 });
+      const ramp = this.addNode('egypt_sledge_ramp', 'city_b02', 'cargo_wagon_full', 102, 166);
+      ramp.sprite.setScale(0.65);
+      ramp.sprite.setDepth(166);
+      ramp.label = this.addLabel(102, 142, '🪵 Baustellenrampe & Schlitten (E)', '#60a5fa');
+      this.placeProp(112, 248, 'prop_wood_stack', undefined, { scale: 0.65, hitW: 22, hitH: 12, hitOffsetY: 8 });
     }
 
     // =========================================================================
@@ -730,46 +755,40 @@ export class WorldScene extends Phaser.Scene {
     // =========================================================================
     if (state.chapter >= 6) {
       // Große 16-Bit-Frachtbarke am Hafenpier
-      const barge = this.addNode('egypt_cargo_barge', 'city_b01', 'nile_cargo_barge', 632, 486);
-      barge.sprite.setScale(0.82);
+      const barge = this.addNode('egypt_cargo_barge', 'city_b01', 'nile_cargo_barge', 648, 486);
+      barge.sprite.setScale(0.78);
       barge.sprite.setDepth(486);
-      barge.label = this.addLabel(632, 452, '⛵ Römische Getreidebarke (E)', '#93c5fd');
+      barge.label = this.addLabel(648, 452, '⛵ Römische Getreidebarke (E)', '#93c5fd');
 
-      // Hafenkran, Fässer & Frachtkisten am Pier
-      this.placeProp(600, 452, 'port_tiles', 'crane_beam_wood', {
-        scale: 0.55,
-        hitW: 20,
-        hitH: 12,
-        hitOffsetY: 14,
-      });
-      this.placeProp(578, 508, 'city_b05', 'crate_wood', { scale: 0.6 });
-      this.placeProp(560, 514, 'city_b05', 'barrel_wood', { scale: 0.6 });
+      // Fässer & Frachtkisten am Pier
+      this.placeProp(582, 534, 'city_b05', 'crate_wood', { scale: 0.40 });
+      this.placeProp(560, 534, 'city_b05', 'barrel_wood', { scale: 0.40 });
 
       // Interaktiver Haupt-Basarstand (öffnet bei E direkt das Handelsmenü!)
-      const bazaarNode = this.addNode('egypt_bazaar_stall', 'city_b05', 'bazaar_punt_incense', 490, 488);
-      bazaarNode.sprite.setScale(0.68);
-      bazaarNode.sprite.setDepth(488);
-      this.addFootprintZone(490, 498, 44, 16);
-      bazaarNode.label = this.addLabel(490, 454, '🏺 Fernhandels-Basar (E / H)', '#f59e0b');
+      const bazaarNode = this.addNode('egypt_bazaar_stall', 'city_b05', 'bazaar_punt_incense', 492, 482);
+      bazaarNode.sprite.setScale(0.65);
+      bazaarNode.sprite.setDepth(482);
+      this.addFootprintZone(492, 492, 44, 16);
+      bazaarNode.label = this.addLabel(492, 448, '🏺 Fernhandels-Basar (E / H)', '#f59e0b');
 
       // Lebendige Markt-Umgebung: Gewürztische, Leinenstand, Beduinenzelt & Schatztruhen
-      this.placeProp(432, 492, 'city_b03', 'canopy_gold', {
-        scale: 0.62,
+      this.placeProp(408, 506, 'city_b03', 'canopy_gold', {
+        scale: 0.58,
         hitW: 40,
         hitH: 16,
         hitOffsetY: 14,
       });
-      this.placeProp(452, 526, 'city_b02', 'market_table_spices', { scale: 0.68 });
-      this.placeProp(488, 526, 'city_b02', 'market_table_fruits', { scale: 0.68 });
-      this.placeProp(462, 466, 'city_b01', 'chest_turquoise', {
-        scale: 0.68,
-        hitW: 22,
-        hitH: 12,
-        hitOffsetY: 6,
+      this.placeProp(454, 532, 'city_b02', 'market_table_spices', { scale: 0.55 });
+      this.placeProp(492, 532, 'city_b02', 'market_table_fruits', { scale: 0.55 });
+      this.placeProp(448, 448, 'city_b01', 'chest_turquoise', {
+        scale: 0.42,
+        hitW: 18,
+        hitH: 10,
+        hitOffsetY: 4,
       });
-      this.placeProp(438, 466, 'city_b01', 'statue_pharaoh', { scale: 0.68 });
-      this.addTorchWithGlow(522, 468, 0.65);
-      this.addLabel(462, 444, '👑 Königliche Schatzkammer', '#fde047');
+      this.placeProp(416, 438, 'city_b01', 'statue_pharaoh', { scale: 0.58 });
+      this.addTorchWithGlow(524, 462, 0.65);
+      this.addLabel(432, 418, '👑 Königliche Schatzkammer', '#fde047');
     }
   }
 
@@ -777,9 +796,9 @@ export class WorldScene extends Phaser.Scene {
     // A. 4 Papyrus-Schilf-Bestände am sumpfigen Flussrand (echte hohe Papyrusstauden)
     const reeds = [
       [590, 120],
-      [595, 230],
-      [590, 430],
-      [595, 535],
+      [596, 218],
+      [590, 422],
+      [608, 542],
     ];
     reeds.forEach(([x, y]) => {
       const n = this.addNode('egypt_papyrus', 'city_b01', 'papyrus_clump_tall', x, y);
@@ -790,9 +809,9 @@ export class WorldScene extends Phaser.Scene {
 
     // B. 3 Akazienäste / Stöcke am Übergang zur Wüste
     const sticks = [
-      [380, 160],
+      [478, 156],
       [400, 370],
-      [350, 470],
+      [392, 456],
     ];
     sticks.forEach(([x, y]) => {
       const n = this.addNode('egypt_stick', 'desert_tileset', 'bush_small', x, y);
@@ -802,9 +821,9 @@ export class WorldScene extends Phaser.Scene {
 
     // C. 3 Wüstenkiesel am Ufersaum
     const pebbles = [
-      [310, 225],
-      [350, 330],
-      [320, 450],
+      [226, 202],
+      [386, 336],
+      [308, 462],
     ];
     pebbles.forEach(([x, y]) => {
       const n = this.addNode('egypt_pebble', 'desert_tileset', 'stone_flat', x, y);
@@ -812,16 +831,16 @@ export class WorldScene extends Phaser.Scene {
       n.label = this.addLabel(x, y - 16, '🪨 Wüstenkiesel (E)', '#cbd5e1');
     });
 
-    // D. Fruchtbarer Nilschlamm am Flussufer (echte Ton-Schlammgrube & Schaufel statt flachem Tile!)
+    // D. Fruchtbarer Nilschlamm am Flussufer (echter dunkler Lehm-Haufen & Schaufel)
     const mudSpots = [
-      [580, 206],
-      [584, 308],
+      [580, 186],
+      [588, 318],
     ];
     mudSpots.forEach(([x, y]) => {
-      const n = this.addNode('egypt_mud', 'city_b02', 'clay_vat_mud', x, y);
-      n.sprite.setScale(0.62);
+      const n = this.addNode('egypt_mud', 'prop_clay_pile', undefined, x, y);
+      n.sprite.setScale(1.1);
       n.sprite.setDepth(y);
-      this.placeProp(x - 14, y + 4, 'city_b02', 'tool_shovel', { scale: 0.5 });
+      this.placeProp(x - 18, y + 2, 'city_b02', 'tool_shovel', { scale: 0.38 });
       n.label = this.addLabel(x, y - 20, '🌊 Nilschlamm-Stich (E)', '#a3e635');
     });
   }
@@ -837,10 +856,10 @@ export class WorldScene extends Phaser.Scene {
 
     // 2. Kapitel 2+: Feldhüter Ameni, Bäuerin Kheti & wandernde Nil-Nutztiere
     if (ch >= 2) {
-      const ameni = this.addNode('egypt_ameni', 'npc_ameni', 0, 460, 182);
+      const ameni = this.addNode('egypt_ameni', 'npc_ameni', 0, 464, 182);
       ameni.sprite.setDepth(182);
       ameni.sprite.anims.play('idle-ameni', true);
-      ameni.label = this.addLabel(460, 157, '🌾 Feldhüter Ameni (Kap. 2)', '#fde047', ch === 2);
+      ameni.label = this.addLabel(464, 157, '🌾 Feldhüter Ameni (Kap. 2)', '#fde047', ch === 2);
 
       const kheti = this.addNode('egypt_kheti', 'npc_kheti', 0, 520, 182);
       kheti.sprite.setDepth(182);
@@ -849,6 +868,7 @@ export class WorldScene extends Phaser.Scene {
 
       // 16-Bit Nil-Nutztiere der Bauern: Hathor-Pflugochse, Jungkalb, Schilfziegen & Dorfhühner
       const ox = this.add.sprite(380, 290, 'sdv_cow', 4).setScale(1.0).setDepth(290);
+      const oxLbl = this.addLabel(380, 270, '🐂 Pflugochse', '#fef08a');
       this.wildlife.addAnimal({
         kind: 'cow',
         sprite: ox,
@@ -858,8 +878,9 @@ export class WorldScene extends Phaser.Scene {
         idleAnim: 'cow-idle',
         walkAnim: 'cow-walk-right',
         specialAnim: 'cow-graze',
+        labelOffsetY: -20,
+        syncLabel: (nx, ny) => oxLbl.setPosition(nx, ny),
       });
-      this.addLabel(380, 270, '🐂 Pflugochse', '#fef08a');
 
       const calf = this.add.sprite(395, 315, 'sdv_calf', 4).setScale(0.85).setDepth(315);
       this.wildlife.addAnimal({
@@ -874,6 +895,7 @@ export class WorldScene extends Phaser.Scene {
       });
 
       const goat1 = this.add.sprite(425, 298, 'sdv_goat', 4).setScale(1.0).setDepth(298);
+      const goatLbl = this.addLabel(425, 280, '🐐 Schilfziege', '#bbf7d0');
       this.wildlife.addAnimal({
         kind: 'goat',
         sprite: goat1,
@@ -883,8 +905,9 @@ export class WorldScene extends Phaser.Scene {
         idleAnim: 'goat-idle',
         walkAnim: 'goat-walk-right',
         specialAnim: 'goat-graze',
+        labelOffsetY: -18,
+        syncLabel: (nx, ny) => goatLbl.setPosition(nx, ny),
       });
-      this.addLabel(425, 280, '🐐 Schilfziege', '#bbf7d0');
 
       const goatBaby = this.add.sprite(438, 320, 'sdv_goat_baby', 4).setScale(0.85).setDepth(320);
       this.wildlife.addAnimal({
@@ -925,18 +948,19 @@ export class WorldScene extends Phaser.Scene {
 
     // 3. Kapitel 3+: Wesir Nefermaat & Palastwache
     if (ch >= 3) {
-      const wesir = this.addNode('egypt_nefermaat', 'npc_nefermaat', 0, 360, 195);
-      wesir.sprite.setDepth(195);
+      const wesir = this.addNode('egypt_nefermaat', 'npc_nefermaat', 0, 356, 192);
+      wesir.sprite.setDepth(192);
       wesir.sprite.anims.play('idle-nefermaat', true);
-      wesir.label = this.addLabel(360, 170, '👑 Wesir Nefermaat (Kap. 3)', '#f59e0b', ch === 3);
+      wesir.label = this.addLabel(356, 167, '👑 Wesir Nefermaat (Kap. 3)', '#f59e0b', ch === 3);
 
-      const guard = this.addNode('egypt_kheti', 'npc_guard', 0, 326, 195);
-      guard.sprite.setDepth(195);
+      const guard = this.addNode('egypt_kheti', 'npc_guard', 0, 324, 192);
+      guard.sprite.setDepth(192);
       guard.sprite.anims.play('idle-guard', true);
-      guard.label = this.addLabel(326, 170, '🛡️ Königliche Palastwache', '#fbbf24');
+      guard.label = this.addLabel(324, 174, '🛡️ Königliche Palastwache', '#fbbf24');
 
       // Flinke Katze am königlichen Getreidespeicher (schützt die Kornkammern vor Mäusen)
       const storageCat = this.add.sprite(412, 168, 'sdv_cat_village', 4).setScale(1.0).setDepth(168);
+      const storageCatLbl = this.addLabel(412, 150, '🐈 Speicherkatze', '#fed7aa');
       this.wildlife.addAnimal({
         kind: 'cat_village',
         sprite: storageCat,
@@ -946,24 +970,26 @@ export class WorldScene extends Phaser.Scene {
         idleAnim: 'cat-village-idle',
         walkAnim: 'cat-village-walk-right',
         specialAnim: 'cat-village-lick',
+        labelOffsetY: -18,
+        syncLabel: (nx, ny) => storageCatLbl.setPosition(nx, ny),
       });
-      this.addLabel(412, 150, '🐈 Speicherkatze', '#fed7aa');
     }
 
     // 4. Kapitel 4+: Ober-Schreiber Ani & Einbalsamierer
     if (ch >= 4) {
-      const ani = this.addNode('egypt_ani', 'npc_ani', 0, 216, 335);
-      ani.sprite.setDepth(335);
+      const ani = this.addNode('egypt_ani', 'npc_ani', 0, 222, 356);
+      ani.sprite.setDepth(356);
       ani.sprite.anims.play('idle-ani', true);
-      ani.label = this.addLabel(216, 310, '📜 Ober-Schreiber Ani (Kap. 4)', '#a78bfa', ch === 4);
+      ani.label = this.addLabel(222, 331, '📜 Ober-Schreiber Ani (Kap. 4)', '#a78bfa', ch === 4);
 
-      const mum = this.addNode('egypt_kheti', 'npc_mummy', 0, 162, 362);
-      mum.sprite.setDepth(362);
+      const mum = this.addNode('egypt_kheti', 'npc_mummy', 0, 162, 356);
+      mum.sprite.setDepth(356);
       mum.sprite.anims.play('idle-mummy', true);
-      mum.label = this.addLabel(162, 337, '⚰️ Balsamierer des Anubis', '#cbd5e1');
+      mum.label = this.addLabel(162, 338, '⚰️ Balsamierer des Anubis', '#cbd5e1');
 
       // Heilige Bastet-Katze im Tempel-Innenhof
       const bastetCat = this.add.sprite(345, 315, 'sdv_cat_bastet', 4).setScale(1.0).setDepth(315);
+      const bastetLbl = this.addLabel(345, 297, '🐱 Heilige Bastet-Katze', '#fde047');
       this.wildlife.addAnimal({
         kind: 'cat_bastet',
         sprite: bastetCat,
@@ -973,11 +999,13 @@ export class WorldScene extends Phaser.Scene {
         idleAnim: 'cat-bastet-idle',
         walkAnim: 'cat-bastet-walk-right',
         specialAnim: 'cat-bastet-lick',
+        labelOffsetY: -18,
+        syncLabel: (nx, ny) => bastetLbl.setPosition(nx, ny),
       });
-      this.addLabel(345, 297, '🐱 Heilige Bastet-Katze', '#fde047');
 
       // Ägyptischer Tesem-Jagdhund (Wachhund am Tempel-Pylon)
       const tesemDog = this.add.sprite(290, 275, 'sdv_dog_tesem', 4).setScale(1.0).setDepth(275);
+      const tesemLbl = this.addLabel(290, 257, '🐕 Tesem-Jagdhund', '#fef08a');
       this.wildlife.addAnimal({
         kind: 'dog_tesem',
         sprite: tesemDog,
@@ -987,19 +1015,21 @@ export class WorldScene extends Phaser.Scene {
         idleAnim: 'dog-tesem-idle',
         walkAnim: 'dog-tesem-walk-right',
         specialAnim: 'dog-tesem-wag',
+        labelOffsetY: -18,
+        syncLabel: (nx, ny) => tesemLbl.setPosition(nx, ny),
       });
-      this.addLabel(290, 257, '🐕 Tesem-Jagdhund', '#fef08a');
     }
 
     // 5. Kapitel 5+: Baumeister Hemiunu
     if (ch >= 5) {
-      const hemi = this.addNode('egypt_hemiunu', 'npc_hemiunu', 0, 136, 205);
-      hemi.sprite.setDepth(205);
+      const hemi = this.addNode('egypt_hemiunu', 'npc_hemiunu', 0, 116, 204);
+      hemi.sprite.setDepth(204);
       hemi.sprite.anims.play('idle-hemiunu', true);
-      hemi.label = this.addLabel(136, 180, '📐 Baumeister Hemiunu (Kap. 5)', '#fef08a', ch === 5);
+      hemi.label = this.addLabel(116, 179, '📐 Baumeister Hemiunu (Kap. 5)', '#fef08a', ch === 5);
 
       // Schnelle Afrikanische Strauße auf den offenen Gizeh-Wüstendünen
       const ostrich = this.add.sprite(90, 440, 'sdv_ostrich', 4).setScale(1.0).setDepth(440);
+      const ostrichLbl = this.addLabel(90, 422, '🪶 Wüstenstrauß', '#fde68a');
       this.wildlife.addAnimal({
         kind: 'ostrich',
         sprite: ostrich,
@@ -1009,8 +1039,9 @@ export class WorldScene extends Phaser.Scene {
         idleAnim: 'ostrich-idle',
         walkAnim: 'ostrich-walk-right',
         specialAnim: 'ostrich-peck',
+        labelOffsetY: -18,
+        syncLabel: (nx, ny) => ostrichLbl.setPosition(nx, ny),
       });
-      this.addLabel(90, 422, '🪶 Wüstenstrauß', '#fde68a');
 
       const babyOstrich = this.add.sprite(120, 450, 'sdv_ostrich_baby', 4).setScale(0.85).setDepth(450);
       this.wildlife.addAnimal({
@@ -1027,23 +1058,24 @@ export class WorldScene extends Phaser.Scene {
 
     // 6. Kapitel 6+: Hafenmeister Baki, Phönizischer Holzhändler & Römischer Senator
     if (ch >= 6) {
-      const baki = this.addNode('egypt_baki', 'npc_baki', 0, 558, 480);
-      baki.sprite.setDepth(480);
+      const baki = this.addNode('egypt_baki', 'npc_baki', 0, 552, 474);
+      baki.sprite.setDepth(474);
       baki.sprite.anims.play('idle-baki', true);
-      baki.label = this.addLabel(558, 455, '⚓ Hafenmeister Baki (Kap. 6)', '#60a5fa', ch === 6);
+      baki.label = this.addLabel(552, 449, '⚓ Hafenmeister Baki (Kap. 6)', '#60a5fa', ch === 6);
 
-      const trader = this.addNode('egypt_cedar_trader', 'npc_senbi', 0, 588, 522);
-      trader.sprite.setDepth(522);
+      const trader = this.addNode('egypt_cedar_trader', 'npc_senbi', 0, 576, 498);
+      trader.sprite.setDepth(498);
       trader.sprite.anims.play('idle-senbi', true);
-      trader.label = this.addLabel(588, 497, '🌲 Phönizischer Holzhändler (E)', '#38bdf8');
+      trader.label = this.addLabel(576, 473, '🌲 Phönizischer Holzhändler (E)', '#38bdf8');
 
-      const envoy = this.addNode('egypt_roman_envoy', 'npc_guard', 0, 524, 512);
-      envoy.sprite.setDepth(512);
-      envoy.sprite.anims.play('idle-guard', true);
-      envoy.label = this.addLabel(524, 487, '🏛️ Senator Cornelius aus Rom (E)', '#f87171');
+      const envoy = this.addNode('egypt_roman_envoy', 'npc_enki', 0, 536, 516);
+      envoy.sprite.setDepth(516);
+      envoy.sprite.anims.play('idle-enki', true);
+      envoy.label = this.addLabel(536, 491, '🏛️ Senator Cornelius aus Rom (E)', '#f87171');
 
       // Exotischer Punt-Papagei am Nilhafen-Basar
       const puntParrot = this.add.sprite(575, 505, 'sdv_parrot', 4).setScale(1.0).setDepth(505);
+      const parrotLbl = this.addLabel(575, 487, '🦜 Punt-Papagei', '#f43f5e');
       this.wildlife.addAnimal({
         kind: 'parrot',
         sprite: puntParrot,
@@ -1053,8 +1085,9 @@ export class WorldScene extends Phaser.Scene {
         idleAnim: 'parrot-idle',
         walkAnim: 'parrot-hop-right',
         specialAnim: 'parrot-flap',
+        labelOffsetY: -18,
+        syncLabel: (nx, ny) => parrotLbl.setPosition(nx, ny),
       });
-      this.addLabel(575, 487, '🦜 Punt-Papagei', '#f43f5e');
     }
 
     // Bauplätze: Nur anzeigen, wenn das Kapitel erreicht ist
@@ -1095,10 +1128,9 @@ export class WorldScene extends Phaser.Scene {
    * - Dorcas-Wüstengazellen in den Dünen bei Gizeh (ab Kap. 5)
    */
   private placeEgyptianFauna(): void {
-    const ch = state.chapter;
-
     // A. Nil-Schildkröte (sonnt sich auf der Sandbank am Nilufer & schwimmt im Schilfwasser)
     const turtle = this.add.sprite(616, 360, 'sdv_turtle', 4).setScale(1.0).setDepth(360);
+    const turtleLbl = this.addLabel(616, 342, '🐢 Nil-Schildkröte', '#86efac');
     this.wildlife.addAnimal({
       kind: 'turtle',
       sprite: turtle,
@@ -1108,32 +1140,13 @@ export class WorldScene extends Phaser.Scene {
       idleAnim: 'turtle-idle',
       walkAnim: 'turtle-walk-right',
       specialAnim: 'turtle-peek',
+      labelOffsetY: -18,
+      syncLabel: (nx, ny) => turtleLbl.setPosition(nx, ny),
     });
-    this.addLabel(616, 342, '🐢 Nil-Schildkröte', '#86efac');
 
     // B. Nil-Singvogel / Reihervogel (pickt am Schilfrand)
-    const bird1 = this.add.sprite(525, 345, 'animal_bird', 0).setScale(1.0).setDepth(345);
+    const bird1 = this.add.sprite(568, 340, 'animal_bird', 0).setScale(1.0).setDepth(340);
     bird1.anims.play('idle-bird', true);
-
-    // C. Heiliger Ibis von Thoth (weißes Schilf-Wasservogel am Papyrusdickicht)
-    this.add.image(575, 362, 'zoo_b02', 'ibis_r').setScale(0.52).setDepth(362);
-
-    // D. Rosa-Flamingos (waten in der seichten Sandbank am Nilufer)
-    this.add.image(612, 425, 'zoo_b02', 'flamingo_r').setScale(0.55).setDepth(425);
-    this.add.image(628, 422, 'zoo_b02', 'flamingo_l').setScale(0.52).setDepth(422);
-
-    // E. Tempel-Fauna (ab Kap. 4: Horus-Falke auf dem Pylon & Pavian im Hof)
-    if (ch >= 4) {
-      this.add.image(380, 140, 'zoo_b02', 'falcon_1').setScale(0.5).setDepth(145);
-      // Entzerrt (§ 1.2): Im ruhigen Tempel-Innenhof neben dem Lotusbecken, frei von Bauplätzen
-      this.add.image(348, 305, 'zoo_b02', 'baboon_seated').setScale(0.5).setDepth(305);
-    }
-
-    // F. Wüsten-Fauna (ab Kap. 5: Dorcas-Gazellenbock & Gazellenkuh an den offenen Gizeh-Dünen)
-    if (ch >= 5) {
-      this.add.image(65, 75, 'zoo_b02', 'gazelle_buck').setScale(0.55).setDepth(75);
-      this.add.image(82, 80, 'zoo_b02', 'gazelle_doe').setScale(0.5).setDepth(80);
-    }
   }
 
   private placeEgyptRelics(): void {
@@ -1203,43 +1216,43 @@ export class WorldScene extends Phaser.Scene {
     } else if (b.id === 'ziegelei') {
       node.builtSprite = this.add
         .image(b.x, b.y - 4, 'city_b04', 'brick_kiln')
-        .setScale(0.85)
+        .setScale(1.15)
         .setDepth(b.y);
       this.addTorchWithGlow(b.x, b.y + 2, 0.55);
       if (node.label) {
-        node.label.setText('🧱 Königliche Lehmziegelei').setColor('#f59e0b').setY(b.y - 28);
+        node.label.setText('🧱 Königliche Lehmziegelei').setColor('#f59e0b').setY(b.y - 34);
       }
     } else if (b.id === 'speicher') {
       node.builtSprite = this.add
         .image(b.x, b.y - 8, 'city_b01', 'granary_compound')
-        .setScale(0.62)
+        .setScale(0.85)
         .setDepth(b.y);
       if (node.label) {
-        node.label.setText('🌾 Königlicher Kornspeicher').setColor('#fde047').setY(b.y - 34);
+        node.label.setText('🌾 Königlicher Kornspeicher').setColor('#fde047').setY(b.y - 44);
       }
     } else if (b.id === 'schreiberhaus') {
       node.builtSprite = this.add
         .image(b.x, b.y - 8, 'city_b01', 'scribes_house')
-        .setScale(0.62)
+        .setScale(0.85)
         .setDepth(b.y);
       if (node.label) {
-        node.label.setText('📜 Haus des Lebens (Per Ankh)').setColor('#a78bfa').setY(b.y - 34);
+        node.label.setText('📜 Haus des Lebens (Per Ankh)').setColor('#a78bfa').setY(b.y - 44);
       }
     } else if (b.id === 'wabet') {
       node.builtSprite = this.add
         .image(b.x, b.y - 8, 'city_b01', 'temple_shrine')
-        .setScale(0.6)
+        .setScale(0.85)
         .setDepth(b.y);
       if (node.label) {
-        node.label.setText('⚱️ Balsamierung (Wabet)').setColor('#c084fc').setY(b.y - 34);
+        node.label.setText('⚱️ Balsamierung (Wabet)').setColor('#c084fc').setY(b.y - 44);
       }
     } else if (b.id === 'steinmetz') {
       node.builtSprite = this.add
         .image(b.x, b.y - 6, 'city_b02', 'stonemason_yard')
-        .setScale(0.6)
+        .setScale(0.75)
         .setDepth(b.y);
       if (node.label) {
-        node.label.setText('🏗️ Bauhütte der Großbaustelle').setColor('#fef08a').setY(b.y - 32);
+        node.label.setText('🏗️ Bauhütte der Großbaustelle').setColor('#fef08a').setY(b.y - 38);
       }
     }
   }
@@ -1324,6 +1337,9 @@ export class WorldScene extends Phaser.Scene {
       // Lebendige Nil-Ökologie & wandernde Fauna
       if (!state.modal && !this.sleeping && this.player) {
         this.wildlife.update(delta, this.player.x, this.player.y);
+        if (this.companion) {
+          this.companion.update(this.player, this.nodes, delta);
+        }
       }
     }
 
@@ -1377,13 +1393,24 @@ export class WorldScene extends Phaser.Scene {
     this.syncWorldLabels();
 
     const n = this.nearest();
-    state.hint = n ? this.hintFor(n) : '';
+    const dogDist = this.companion?.getDistanceTo(this.player.x, this.player.y) ?? Infinity;
+    if (n) {
+      state.hint = this.hintFor(n);
+    } else if (dogDist < 44) {
+      state.hint = '🐕 Anubis (E: Streicheln)';
+    } else {
+      state.hint = '';
+    }
 
     const ePressed = Phaser.Input.Keyboard.JustDown(this.wasd.E) || Phaser.Input.Keyboard.JustDown(this.wasd.SPACE);
     const touchAction = Boolean(state.touch && state.touch.consumeAction());
 
-    if ((ePressed || touchAction) && !state.modal && n) {
-      this.interact(n);
+    if ((ePressed || touchAction) && !state.modal) {
+      if (n) {
+        this.interact(n);
+      } else if (dogDist < 44) {
+        this.companion?.pet();
+      }
     }
 
     this.saveTimer += delta;
@@ -1405,14 +1432,28 @@ export class WorldScene extends Phaser.Scene {
     const cam = this.cameras.main;
     const hideAll = state.modal;
 
+    // Single-Proximity DOM-Label Rule (Skill § 1.2 / 2.5):
+    // Nur das EINE nächstgelegene Umgebungs-Schild (< 44px) gleichzeitig einblenden!
+    let bestProxLbl: DomLabel | null = null;
+    let bestProxDist = 44;
+    if (!hideAll) {
+      for (const lbl of this.domLabels) {
+        if (lbl.alwaysVisible || lbl.isQuestTarget) continue;
+        const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, lbl.x, lbl.y + 18);
+        if (d < bestProxDist) {
+          bestProxDist = d;
+          bestProxLbl = lbl;
+        }
+      }
+    }
+
     for (const lbl of this.domLabels) {
       if (hideAll) {
         lbl.el.style.display = 'none';
         continue;
       }
 
-      const distToPlayer = Phaser.Math.Distance.Between(this.player.x, this.player.y, lbl.x, lbl.y + 18);
-      const shouldShow = Boolean(lbl.alwaysVisible || lbl.isQuestTarget || distToPlayer <= LABEL_PROXIMITY_PX);
+      const shouldShow = Boolean(lbl.alwaysVisible || lbl.isQuestTarget || lbl === bestProxLbl);
       if (!shouldShow) {
         lbl.el.style.display = 'none';
         continue;
@@ -1489,7 +1530,6 @@ export class WorldScene extends Phaser.Scene {
     let minD = REACH;
     for (const n of this.nodes) {
       if (n.readyAt > 0) continue;
-      if (n.kind === 'egypt_palm' && !(state.chapter === 2 && state.quest === 7)) continue;
 
       const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, n.sprite.x, n.sprite.y);
       if (d < minD) {
@@ -1519,7 +1559,7 @@ export class WorldScene extends Phaser.Scene {
       case 'egypt_nilometer':
         return 'Drücke E: Wasserstand am Nilometer ablesen';
       case 'egypt_palm':
-        return state.chapter === 2 && state.quest === 7 ? 'Drücke E: Süße Datteln von der Palme pflücken' : 'Dattelpalme der fruchtbaren Nil-Oase';
+        return 'Drücke E: Süße Datteln von der Palme pflücken';
       case 'egypt_papyrus':
         return 'Drücke E: Papyrus-Schilf schneiden';
       case 'egypt_stick':
@@ -1992,6 +2032,7 @@ export class WorldScene extends Phaser.Scene {
     sfx.pickup();
     state.emit('toast', '+1 Süße Datteln von der Palme gepflückt!');
     n.readyAt = Date.now() + REGROW_MS;
+    if (n.label) n.label.el.style.opacity = '0.35';
     state.persist();
   }
 
